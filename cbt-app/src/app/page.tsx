@@ -109,6 +109,7 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
+
           >
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-blue-50 text-blue-700 text-sm font-semibold mb-8 border border-blue-100 shadow-sm">
@@ -125,82 +126,86 @@ export default function HomePage() {
               dengan <span className="text-blue-600">Live Proctoring</span> Real-time
             </p>
 
-            <p className="text-slate-500 text-lg md:text-xl max-w-23xl mx-auto mb-12 leading-relaxed">
+            <p className="text-slate-500 text-lg md:text-xl max-w-22xl mx-auto mb-8 leading-relaxed">
               Platform ujian online modern. Aman, cepat, dan terintegrasi untuk pengalaman ujian yang profesional.
             </p>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-              <Button size="xl" className="w-full sm:w-auto shadow-xl shadow-blue-500/30 text-base px-8" asChild>
-                <Link href="/login">
-                  <LogIn className="w-5 h-5" />
-                  Mulai Ujian
-                  <ArrowRight className="w-5 h-5" />
-                </Link>
-              </Button>
+            {/* CTA + Trust Badges */}
+            <div className="flex flex-col items-center gap-6">
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Button size="xl" className="w-full sm:w-auto min-w-[160px] shadow-xl shadow-blue-500/30 text-base px-6" asChild>
+                  <Link href="/login">
+                    <LogIn className="w-5 h-5" />
+                    Mulai Ujian
+                    <ArrowRight className="w-5 h-5" />
+                  </Link>
+                </Button>
 
-              <Button
-                variant="outline"
-                size="xl"
-                className="w-full sm:w-auto border-2 border-amber-400 text-amber-600 hover:bg-amber-50 hover:border-amber-500 text-base px-8"
-                asChild
-              >
-                <Link href="/live-score">
-                  <Trophy className="w-5 h-5" />
-                  Live Score
-                </Link>
-              </Button>
+                <Button
+                  variant="outline"
+                  size="xl"
+                  className="w-full sm:w-auto min-w-[140px] border-2 border-amber-400 text-amber-600 hover:bg-amber-50 hover:border-amber-500 text-base px-6"
+                  asChild
+                >
+                  <Link href="/live-score">
+                    <Trophy className="w-5 h-5" />
+                    Live Score
+                  </Link>
+                </Button>
 
-              <Button
-                variant="secondary"
-                size="xl"
-                className="w-full sm:w-auto bg-slate-900 text-white hover:bg-slate-800 text-base px-8"
-                asChild
-              >
-                <Link href="/admin">
-                  <Shield className="w-5 h-5" />
-                  Admin Panel
-                </Link>
-              </Button>
+                <Button
+                  variant="secondary"
+                  size="xl"
+                  className="w-full sm:w-auto min-w-[160px] bg-slate-900 text-white hover:bg-slate-800 text-base px-8"
+                  asChild
+                >
+                  <Link href="/admin">
+                    <Shield className="w-5 h-5" />
+                    Admin Panel
+                  </Link>
+                </Button>
+              </div>
+
+              {/* Trust Badges */}
+              <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-500">
+                <span className="flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                  100% Secure
+                </span>
+                <span className="flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-amber-500" />
+                  Serverless Architecture
+                </span>
+                <span className="flex items-center gap-2">
+                  <UserCheck className="w-5 h-5 text-blue-500" />
+                  Anti-Cheat System
+                </span>
+              </div>
             </div>
 
-            {/* Trust Badges */}
-            <div className="flex flex-wrap items-center justify-center gap-8 text-sm text-slate-500">
-              <span className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                100% Secure
-              </span>
-              <span className="flex items-center gap-2">
-                <Zap className="w-5 h-5 text-amber-500" />
-                Serverless Architecture
-              </span>
-              <span className="flex items-center gap-2">
-                <UserCheck className="w-5 h-5 text-blue-500" />
-                Anti-Cheat System
-              </span>
-            </div>
           </motion.div>
         </div>
       </section>
 
       {/* How It Works Section */}
-      <section className="py-24 lg:py-32 px-8 sm:px-12 lg:px-24 bg-slate-50 shrink-0">
-        <div className="w-full max-w-6xl mx-auto">
+      <section className="py-24 lg:py-32 bg-slate-50 shrink-0 w-full">
+        <div className="w-full flex flex-col items-center px-6 sm:px-8 lg:px-12">
           {/* Section Header */}
-          <div className="text-center mb-16 lg:mb-20">
+          <div className="w-full max-w-4xl text-center mb-16 lg:mb-20">
             <span className="inline-block px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold mb-5">
               Cara Kerja
             </span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-5">
               Tiga Langkah Mudah
             </h2>
-            <p className="text-slate-600 text-base sm:text-lg lg:text-xl max-w-2xl mx-auto">
+            <p className="text-slate-600 text-base sm:text-lg lg:text-xl">
               Mulai ujian dalam hitungan menit dengan proses yang sederhana
             </p>
           </div>
 
-          {/* Steps - Simple 3 column layout */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 lg:gap-16">
+          {/* Steps - 3 column layout */}
+          <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-3 gap-10 lg:gap-16">
             {steps.map((item, index) => (
               <motion.div
                 key={item.step}
@@ -208,7 +213,7 @@ export default function HomePage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="text-center"
+                className="flex flex-col items-center text-center"
               >
                 {/* Icon */}
                 <div className={`inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br ${item.color} text-white mb-6 shadow-xl`}>
@@ -224,7 +229,7 @@ export default function HomePage() {
                 </h3>
 
                 {/* Description */}
-                <p className="text-slate-500 text-base lg:text-lg leading-relaxed">
+                <p className="text-slate-500 text-base lg:text-lg leading-relaxed max-w-xs">
                   {item.description}
                 </p>
               </motion.div>
@@ -255,22 +260,23 @@ export default function HomePage() {
 
           {/* Features Grid - Clean equal layout */}
 
-          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+          <div className="flex flex-col lg:flex-row gap-2 lg:gap-6 px-4 sm:px-6 lg:px-11">
+            <div className="flex flex-col lg:flex-row gap-6 px-6 lg:px-12 justify-center"></div>
             {/* Ujian Online - Feature Card */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 6 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="flex-1 rounded-2xl lg:rounded-3xl p-8 lg:p-10 bg-gradient-to-br from-blue-500 to-blue-600 text-white relative overflow-hidden group"
+              className="flex-1 rounded-2xl lg:rounded-2xl p-2 lg:p-2 bg-gradient-to-br from-blue-400 to-blue-600 text-white relative overflow-hidden group"
             >
-              <div className="absolute top-0 right-0 w-60 h-60 bg-white/10 rounded-full blur-3xl" />
+              <div className="absolute top-0 right-0 w-60 h-60 bg-white/10 rounded-full blur-2xl" />
               <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full blur-2xl" />
               <div className="relative h-full flex flex-col items-center text-center">
-                <div className="w-16 h-16 rounded-xl bg-white/20 flex items-center justify-center mb-6">
+                <div className="w-16 h-16 rounded-xl bg-white/18 flex items-center justify-center mb-4">
                   <Monitor className="w-8 h-8" />
                 </div>
-                <h3 className="text-2xl lg:text-3xl font-bold mb-3">Ujian Online</h3>
-                <p className="text-blue-100 text-base lg:text-lg leading-relaxed">
+                <h3 className="text-2xl lg:text-3xl font-bold mb-1">Ujian Online</h3>
+                <p className="text-blue-50 text-base lg:text-lg leading-relaxed">
                   Interface modern dengan navigasi intuitif. Timer, auto-save, dan pengalaman ujian yang nyaman di semua perangkat.
                 </p>
               </div>
@@ -290,7 +296,7 @@ export default function HomePage() {
                   <div className={`w-14 h-14 rounded-xl ${feature.iconBg} flex items-center justify-center mb-4 text-white group-hover:scale-110 transition-transform shadow-lg`}>
                     <feature.icon className="w-7 h-7" />
                   </div>
-                  <h3 className="text-xl lg:text-2xl font-bold text-slate-900 mb-2">{feature.title}</h3>
+                  <h3 className="text-xl lg:text-2xl font-bold text-slate-900 mb-6">{feature.title}</h3>
                   <p className="text-slate-500 text-base lg:text-lg leading-relaxed">{feature.description}</p>
                 </motion.div>
               ))}
