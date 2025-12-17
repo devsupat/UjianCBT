@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useSWR from 'swr';
 import {
@@ -13,16 +13,28 @@ import {
     AlertTriangle,
     Loader2,
     Monitor,
-    Info
+    Info,
+    Play
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { getLiveScore } from '@/lib/api';
-import type { LiveScoreEntry, LiveScoreStats } from '@/types';
+import { getLiveScore, getUsers } from '@/lib/api';
+import type { LiveScoreEntry, LiveScoreStats, User } from '@/types';
 
 const PIN_CODE = process.env.NEXT_PUBLIC_LIVE_SCORE_PIN || '2025';
+
+// Combined score entry for leaderboard
+interface LeaderboardEntry {
+    id: string;
+    nama: string;
+    kelas: string;
+    skor: number;
+    status: 'SELESAI' | 'DISKUALIFIKASI' | 'SEDANG' | 'BELUM';
+    waktu_selesai?: string;
+    isLive: boolean;
+}
 
 export default function LiveScorePage() {
     const [isUnlocked, setIsUnlocked] = useState(false);
@@ -70,7 +82,8 @@ export default function LiveScorePage() {
         return () => clearInterval(interval);
     }, [isBlocked]);
 
-    const { data, isLoading } = useSWR<{
+    // Fetch live scores (finished students with accurate scores)
+    const { data: liveScoreData, isLoading: isLoadingScores } = useSWR<{
         success: boolean;
         data?: LiveScoreEntry[];
         stats?: LiveScoreStats
@@ -78,10 +91,90 @@ export default function LiveScorePage() {
         isUnlocked ? 'liveScore' : null,
         getLiveScore,
         {
-            refreshInterval: 5000,
+            refreshInterval: 3000,
             revalidateOnFocus: true,
         }
     );
+
+    // Fetch all users (includes SEDANG students for real-time racing)
+    const { data: usersData, isLoading: isLoadingUsers } = useSWR<{
+        success: boolean;
+        data?: User[];
+    }>(
+        isUnlocked ? 'allUsers' : null,
+        getUsers,
+        {
+            refreshInterval: 3000,
+            revalidateOnFocus: true,
+        }
+    );
+
+    const isLoading = isLoadingScores || isLoadingUsers;
+
+    // Merge data: combine liveScore (finished) with users (includes SEDANG)
+    const leaderboard = useMemo((): LeaderboardEntry[] => {
+        const entries: LeaderboardEntry[] = [];
+        const addedNames = new Set<string>();
+
+        // First, add all users from getUsers (includes SEDANG students)
+        if (usersData?.data) {
+            usersData.data.forEach(user => {
+                if (user.status_ujian === 'SEDANG' || user.status_ujian === 'SELESAI' || user.status_ujian === 'DISKUALIFIKASI') {
+                    entries.push({
+                        id: user.id_siswa,
+                        nama: user.nama_lengkap,
+                        kelas: user.kelas,
+                        skor: user.skor_akhir || 0,
+                        status: user.status_ujian,
+                        waktu_selesai: user.waktu_selesai,
+                        isLive: user.status_ujian === 'SEDANG',
+                    });
+                    addedNames.add(user.nama_lengkap);
+                }
+            });
+        }
+
+        // Then update/add from liveScore data (more accurate scores for finished)
+        if (liveScoreData?.data) {
+            liveScoreData.data.forEach(score => {
+                const existingIndex = entries.findIndex(e => e.nama === score.nama);
+                if (existingIndex >= 0) {
+                    // Update with more accurate live score data
+                    entries[existingIndex].skor = score.skor;
+                    entries[existingIndex].status = score.status;
+                    entries[existingIndex].waktu_selesai = score.waktu_selesai;
+                    entries[existingIndex].isLive = score.status === 'SEDANG';
+                } else if (!addedNames.has(score.nama)) {
+                    entries.push({
+                        id: score.nama,
+                        nama: score.nama,
+                        kelas: score.kelas,
+                        skor: score.skor,
+                        status: score.status,
+                        waktu_selesai: score.waktu_selesai,
+                        isLive: score.status === 'SEDANG',
+                    });
+                }
+            });
+        }
+
+        // Sort by score descending (racing leaderboard)
+        return entries.sort((a, b) => b.skor - a.skor);
+    }, [liveScoreData?.data, usersData?.data]);
+
+    // Stats from liveScore or calculate from users
+    const stats = useMemo(() => {
+        if (liveScoreData?.stats) return liveScoreData.stats;
+        if (!usersData?.data) return undefined;
+        const users = usersData.data;
+        return {
+            total: users.length,
+            sedang: users.filter(u => u.status_ujian === 'SEDANG').length,
+            selesai: users.filter(u => u.status_ujian === 'SELESAI').length,
+            diskualifikasi: users.filter(u => u.status_ujian === 'DISKUALIFIKASI').length,
+            belum: users.filter(u => u.status_ujian === 'BELUM').length,
+        };
+    }, [liveScoreData?.stats, usersData?.data]);
 
     useEffect(() => {
         if (!autoScroll || !scrollRef.current) return;
@@ -103,7 +196,7 @@ export default function LiveScorePage() {
 
         const interval = setInterval(scroll, 50);
         return () => clearInterval(interval);
-    }, [autoScroll, data]);
+    }, [autoScroll, leaderboard]);
 
     const handlePinSubmit = useCallback((e: React.FormEvent) => {
         e.preventDefault();
@@ -129,9 +222,6 @@ export default function LiveScorePage() {
 
         setPin('');
     }, [pin, attempts, isBlocked]);
-
-    const scores = data?.data || [];
-    const stats = data?.stats;
 
     // PIN Screen
     if (!isUnlocked) {
@@ -202,10 +292,9 @@ export default function LiveScorePage() {
                 </div>
             </div>
 
-
-            {/* TV Broadcast Header */}
+            {/* Header */}
             <header className="bg-white shadow-lg border-b border-slate-200 relative z-40">
-                <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
+                <div className="w-full px-6 py-6 flex items-center justify-between">
                     <div className="flex items-center gap-6">
                         <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/30">
                             <Trophy className="w-8 h-8 text-white" />
@@ -216,7 +305,7 @@ export default function LiveScorePage() {
                             </h1>
                             <div className="flex items-center gap-2 mt-1">
                                 <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                                <p className="text-slate-500 font-medium uppercase tracking-widest text-xs">Real-time Updates • 5s Refresh</p>
+                                <p className="text-slate-500 font-medium uppercase tracking-widest text-xs">Real-time Updates • 3s Refresh</p>
                             </div>
                         </div>
                     </div>
@@ -235,21 +324,28 @@ export default function LiveScorePage() {
                 </div>
             </header>
 
-            <div className="max-w-7xl mx-auto px-6 py-8 h-[calc(100vh-180px)] flex flex-col gap-8">
-                {/* Stats Cards - Large Visibility */}
+            <div className="w-full px-6 py-8 h-[calc(100vh-180px)] flex flex-col gap-8">
+                {/* Stats Cards */}
                 {stats && (
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-6">
                         <Card className="p-6 text-center shadow-md border-t-4 border-blue-500 bg-white transform hover:scale-105 transition-transform duration-300">
                             <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Total Peserta</p>
                             <p className="text-5xl font-black text-slate-800">{stats.total}</p>
                         </Card>
                         <Card className="p-6 text-center shadow-md border-t-4 border-amber-500 bg-white transform hover:scale-105 transition-transform duration-300">
-                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Sedang Ujian</p>
-                            <p className="text-5xl font-black text-slate-800">{stats.sedang}</p>
+                            <div className="flex items-center justify-center gap-2 mb-1">
+                                <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+                                <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Sedang Ujian</p>
+                            </div>
+                            <p className="text-5xl font-black text-amber-600">{stats.sedang}</p>
                         </Card>
                         <Card className="p-6 text-center shadow-md border-t-4 border-emerald-500 bg-white transform hover:scale-105 transition-transform duration-300">
                             <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Selesai</p>
                             <p className="text-5xl font-black text-slate-800">{stats.selesai}</p>
+                        </Card>
+                        <Card className="p-6 text-center shadow-md border-t-4 border-red-500 bg-white transform hover:scale-105 transition-transform duration-300">
+                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Diskualifikasi</p>
+                            <p className="text-5xl font-black text-red-600">{stats.diskualifikasi}</p>
                         </Card>
                         <Card className="p-6 text-center shadow-md border-t-4 border-slate-300 bg-white transform hover:scale-105 transition-transform duration-300">
                             <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Belum Mulai</p>
@@ -259,13 +355,15 @@ export default function LiveScorePage() {
                 )}
 
                 {/* Leaderboard */}
-                {/* TV Leaderboard Listing */}
                 <div className="flex-1 bg-slate-200/50 rounded-2xl p-2 md:p-4 overflow-hidden shadow-inner border border-slate-300">
                     <div className="flex items-center justify-between px-6 py-3 mb-2 bg-slate-300/50 rounded-lg text-slate-600 font-bold uppercase tracking-wider text-sm sticky top-0 z-10">
-                        <div className="w-24">Rank</div>
-                        <div className="flex-1">Peserta</div>
+                        <div className="w-16 text-center">No</div>
+                        <div className="flex-1">Nama</div>
+                        <div className="w-24 text-center">Kelas</div>
+                        <div className="w-32 text-center">Skor</div>
+                        <div className="w-20 text-center">Rank</div>
                         <div className="w-32 text-center">Status</div>
-                        <div className="w-40 text-right">Skor Live</div>
+                        <div className="w-32 text-right">Waktu</div>
                     </div>
 
                     <div
@@ -278,91 +376,110 @@ export default function LiveScorePage() {
                                     <Loader2 className="w-16 h-16 animate-spin text-blue-600" />
                                     <p className="text-xl text-slate-500 font-medium">Memuat Data Live Score...</p>
                                 </div>
-                            ) : scores.length === 0 ? (
+                            ) : leaderboard.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-40 gap-6 opacity-40">
                                     <Trophy className="w-32 h-32 text-slate-400" />
-                                    <p className="text-2xl text-slate-500 font-bold">Belum ada data peserta</p>
+                                    <p className="text-2xl text-slate-500 font-bold">Belum ada peserta yang memulai ujian</p>
                                 </div>
                             ) : (
-                                scores.map((score, index) => (
+                                leaderboard.map((entry, index) => (
                                     <motion.div
-                                        key={`${score.nama}`}
+                                        key={entry.id}
                                         layout
                                         initial={{ opacity: 0, scale: 0.9 }}
                                         animate={{
                                             opacity: 1,
                                             scale: 1,
-                                            backgroundColor: score.skor > 0 ? ["#ffffff", "#eff6ff", "#ffffff"] : "#ffffff"
+                                            backgroundColor: entry.isLive ? ["#ffffff", "#dbeafe", "#ffffff"] : "#ffffff"
                                         }}
                                         exit={{ opacity: 0, scale: 0.9 }}
                                         transition={{ duration: 0.4 }}
                                         className={`
                                             flex items-center justify-between p-4 md:p-6 rounded-xl shadow-sm border-l-8 
-                                            ${score.status === 'DISKUALIFIKASI' ? 'bg-red-50 border-red-500' : 'bg-white'}
-                                            ${index === 0 ? 'border-yellow-400 ring-2 ring-yellow-400/20 z-10 scale-[1.01]' :
-                                                index === 1 ? 'border-slate-300' :
-                                                    index === 2 ? 'border-amber-600' : 'border-blue-500'}
+                                            ${entry.status === 'DISKUALIFIKASI' ? 'bg-red-50 border-red-500' :
+                                                entry.isLive ? 'bg-blue-50 border-blue-500 ring-2 ring-blue-400/30' :
+                                                    index === 0 ? 'border-yellow-400 ring-2 ring-yellow-400/20 bg-amber-50 z-10 scale-[1.01]' :
+                                                        index === 1 ? 'border-slate-300 bg-white' :
+                                                            index === 2 ? 'border-amber-600 bg-white' : 'border-blue-500 bg-white'}
                                         `}
                                     >
-                                        {/* Rank Badge */}
-                                        <div className="w-24 flex items-center gap-4">
-                                            {index === 0 ? (
-                                                <div className="w-14 h-14 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-full flex items-center justify-center shadow-lg shadow-yellow-500/30 text-2xl animate-bounce">
-                                                    🏆
-                                                </div>
-                                            ) : index === 1 ? (
-                                                <div className="w-12 h-12 bg-gradient-to-br from-slate-200 to-slate-400 rounded-full flex items-center justify-center shadow-md text-xl">
-                                                    🥈
-                                                </div>
-                                            ) : index === 2 ? (
-                                                <div className="w-12 h-12 bg-gradient-to-br from-amber-600 to-amber-700 rounded-full flex items-center justify-center shadow-md text-white text-xl">
-                                                    🥉
-                                                </div>
-                                            ) : (
-                                                <div className="w-10 h-10 bg-slate-100 text-slate-500 rounded-lg flex items-center justify-center font-bold text-lg">
-                                                    #{index + 1}
-                                                </div>
+                                        {/* No (Sequential Number) */}
+                                        <div className="w-16 text-center">
+                                            <span className={`text-lg font-bold ${entry.isLive ? 'text-blue-600' : 'text-slate-500'}`}>
+                                                {index + 1}
+                                            </span>
+                                        </div>
+
+                                        {/* Nama */}
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2">
+                                                {entry.isLive && (
+                                                    <span className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
+                                                )}
+                                                <h3 className="text-xl font-bold text-slate-800 leading-none">{entry.nama}</h3>
+                                            </div>
+                                            {entry.isLive && (
+                                                <p className="text-sm text-blue-600 font-medium mt-1">Sedang mengerjakan ujian...</p>
                                             )}
                                         </div>
 
-                                        {/* User Info */}
-                                        <div className="flex-1">
-                                            <h3 className="text-2xl font-bold text-slate-800 mb-1 leading-none">{score.nama}</h3>
-                                            <div className="flex items-center gap-2">
-                                                <Badge variant="outline" className="text-slate-500 border-slate-300">
-                                                    {score.kelas}
-                                                </Badge>
-                                                {score.waktu_selesai && (
-                                                    <span className="text-xs text-slate-400 flex items-center gap-1">
-                                                        <Clock className="w-3 h-3" />
-                                                        Selesai: {score.waktu_selesai}
-                                                    </span>
-                                                )}
+                                        {/* Kelas */}
+                                        <div className="w-24 text-center">
+                                            <Badge variant="outline" className="text-slate-500 border-slate-300">
+                                                {entry.kelas}
+                                            </Badge>
+                                        </div>
+
+                                        {/* Skor */}
+                                        <div className="w-32 text-center">
+                                            <div className={`text-3xl font-black tracking-tighter ${entry.skor >= 80 ? 'text-emerald-600' :
+                                                    entry.skor >= 60 ? 'text-blue-600' :
+                                                        entry.skor >= 40 ? 'text-amber-500' : 'text-slate-400'
+                                                }`}>
+                                                {entry.skor.toFixed(1)}
                                             </div>
+                                        </div>
+
+                                        {/* Rank (Medal/Position) */}
+                                        <div className="w-20 flex justify-center">
+                                            {index === 0 ? (
+                                                <div className="w-10 h-10 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-full flex items-center justify-center shadow-lg shadow-yellow-500/30 text-lg">
+                                                    🥇
+                                                </div>
+                                            ) : index === 1 ? (
+                                                <div className="w-10 h-10 bg-gradient-to-br from-slate-200 to-slate-400 rounded-full flex items-center justify-center shadow-md text-lg">
+                                                    🥈
+                                                </div>
+                                            ) : index === 2 ? (
+                                                <div className="w-10 h-10 bg-gradient-to-br from-amber-600 to-amber-700 rounded-full flex items-center justify-center shadow-md text-white text-lg">
+                                                    🥉
+                                                </div>
+                                            ) : (
+                                                <span className="text-slate-400 font-medium">-</span>
+                                            )}
                                         </div>
 
                                         {/* Status */}
                                         <div className="w-32 text-center">
                                             <Badge
-                                                className={`text-sm px-3 py-1 ${score.status === 'SELESAI' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' :
-                                                    score.status === 'SEDANG' ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 animate-pulse' :
-                                                        score.status === 'DISKUALIFIKASI' ? 'bg-red-100 text-red-700' :
-                                                            'bg-slate-100 text-slate-600'
+                                                className={`text-sm px-3 py-1 ${entry.status === 'SELESAI' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' :
+                                                        entry.status === 'SEDANG' ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
+                                                            entry.status === 'DISKUALIFIKASI' ? 'bg-red-100 text-red-700' :
+                                                                'bg-slate-100 text-slate-600'
                                                     }`}
                                             >
-                                                {score.status}
+                                                {entry.isLive && <Play className="w-3 h-3 mr-1 inline animate-pulse" />}
+                                                {entry.status}
                                             </Badge>
                                         </div>
 
-                                        {/* Score - HUGE */}
-                                        <div className="w-40 text-right">
-                                            <div className={`text-4xl md:text-5xl font-black tracking-tighter ${score.skor >= 80 ? 'text-emerald-600' :
-                                                score.skor >= 60 ? 'text-blue-600' :
-                                                    score.skor >= 40 ? 'text-amber-500' : 'text-slate-400'
-                                                }`}>
-                                                {score.skor.toFixed(1)}
-                                            </div>
-                                            <div className="text-xs text-slate-400 font-medium uppercase tracking-wider mt-1">Total Poin</div>
+                                        {/* Waktu */}
+                                        <div className="w-32 text-right">
+                                            {entry.isLive ? (
+                                                <span className="text-blue-600 font-medium text-sm">Live...</span>
+                                            ) : (
+                                                <span className="text-slate-500 text-sm">{entry.waktu_selesai || '-'}</span>
+                                            )}
                                         </div>
                                     </motion.div>
                                 ))
