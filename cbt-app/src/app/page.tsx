@@ -184,58 +184,49 @@ export default function HomePage() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 lg:py-28 px-6 sm:px-10 lg:px-20 bg-slate-50 shrink-0">
-        <div className="w-full">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <span className="inline-block px-5 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold mb-6">
+      <section className="py-24 lg:py-32 px-8 sm:px-12 lg:px-24 bg-slate-50 shrink-0">
+        <div className="w-full max-w-6xl mx-auto">
+          {/* Section Header */}
+          <div className="text-center mb-16 lg:mb-20">
+            <span className="inline-block px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold mb-5">
               Cara Kerja
             </span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-5">
               Tiga Langkah Mudah
             </h2>
-            <p className="text-slate-500 text-lg lg:text-xl max-w-20xl mx-auto">
+            <p className="text-slate-600 text-base sm:text-lg lg:text-xl max-w-2xl mx-auto">
               Mulai ujian dalam hitungan menit dengan proses yang sederhana
             </p>
-          </motion.div>
+          </div>
 
-          {/* Steps - Full width flex layout */}
-          <div className="flex flex-col md:flex-row gap-7 lg:gap-10 pt-6">
+          {/* Steps - Simple 3 column layout */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 lg:gap-16">
             {steps.map((item, index) => (
               <motion.div
                 key={item.step}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: index * 0.15 }}
-                className="flex-1 relative"
+                transition={{ delay: index * 0.1 }}
+                className="text-center"
               >
-                {/* Step Card */}
-                <div className="h-full bg-white rounded-2xl p-6 lg:p-10 pt-10 lg:pt-12 shadow-lg hover:shadow-xl transition-shadow border border-slate-100 text-center mt-4">
-                  {/* Step Number Badge */}
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-slate-900 text-white text-xs font-bold rounded-full tracking-widest">
-                    LANGKAH {item.step}
-                  </div>
-
-                  {/* Step Icon */}
-                  <div className={`inline-flex items-center justify-center w-20 h-20 lg:w-24 lg:h-24 rounded-2xl lg:rounded-3xl bg-gradient-to-br ${item.color} text-white mb-6 shadow-xl mx-auto`}>
-                    <item.icon className="w-10 h-10 lg:w-12 lg:h-12" />
-                  </div>
-
-                  <h3 className="text-xl lg:text-2xl font-bold text-slate-900 mb-3">{item.title}</h3>
-                  <p className="text-slate-500 text-base lg:text-lg leading-relaxed">{item.description}</p>
+                {/* Icon */}
+                <div className={`inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br ${item.color} text-white mb-6 shadow-xl`}>
+                  <item.icon className="w-10 h-10" />
                 </div>
 
-                {/* Connector Arrow - Hidden on mobile */}
-                {index < steps.length - 1 && (
-                  <div className="hidden md:flex absolute top-1/2 -right-4 lg:-right-5 -translate-y-1/2 z-10">
-                    <ChevronRight className="w-8 h-8 text-slate-300" />
-                  </div>
-                )}
+                {/* Step Number + Title */}
+                <div className="text-xs font-bold text-slate-400 tracking-widest mb-2">
+                  LANGKAH {item.step}
+                </div>
+                <h3 className="text-xl lg:text-2xl font-bold text-slate-900 mb-3">
+                  {item.title}
+                </h3>
+
+                {/* Description */}
+                <p className="text-slate-500 text-base lg:text-lg leading-relaxed">
+                  {item.description}
+                </p>
               </motion.div>
             ))}
           </div>
