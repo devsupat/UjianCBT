@@ -191,171 +191,185 @@ export default function LiveScorePage() {
 
     // Live Score Screen
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
+        <div className="min-h-screen bg-slate-100 font-sans overflow-hidden">
             {/* Announcement Bar */}
-            <div className="announcement-bar px-4 py-2 text-center text-sm">
-                <div className="flex items-center justify-center gap-2">
-                    <Info className="w-4 h-4 flex-shrink-0" />
-                    <span>
-                        <strong>Penting:</strong> Kegiatan ini merupakan latihan/simulasi internal sekolah dan bukan Tes Kemampuan Akademik (TKA) resmi dari Kemendikdasmen.
+            <div className="bg-blue-600 text-white px-6 py-3 text-center text-lg font-medium shadow-md relative z-50">
+                <div className="flex items-center justify-center gap-3 animate-pulse">
+                    <Info className="w-5 h-5 flex-shrink-0" />
+                    <span className="tracking-wide">
+                        LATIHAN / SIMULASI INTERNAL SEKOLAH - BUKAN TKA RESMI KEMENDIKDASMEN
                     </span>
                 </div>
             </div>
 
-            {/* Header */}
-            <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm px-6 py-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                            <Trophy className="w-6 h-6 text-white" />
+
+            {/* TV Broadcast Header */}
+            <header className="bg-white shadow-lg border-b border-slate-200 relative z-40">
+                <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/30">
+                            <Trophy className="w-8 h-8 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold gradient-text">Live Score</h1>
-                            <p className="text-slate-500 text-sm">Update setiap 5 detik</p>
+                            <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-teal-500 tracking-tight">
+                                LIVE SCORE MONITORING
+                            </h1>
+                            <div className="flex items-center gap-2 mt-1">
+                                <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                                <p className="text-slate-500 font-medium uppercase tracking-widest text-xs">Real-time Updates • 5s Refresh</p>
+                            </div>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-4">
                         <Button
                             variant={autoScroll ? 'default' : 'outline'}
-                            size="sm"
+                            size="lg"
+                            className={`font-bold tracking-wide ${autoScroll ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
                             onClick={() => setAutoScroll(!autoScroll)}
                         >
-                            <Monitor className="w-4 h-4" />
-                            Auto Scroll: {autoScroll ? 'ON' : 'OFF'}
+                            <Monitor className="w-5 h-5 mr-2" />
+                            AUTO SCROLL: {autoScroll ? 'ON' : 'OFF'}
                         </Button>
                     </div>
                 </div>
             </header>
 
-            <div className="container mx-auto px-6 py-6">
-                {/* Stats */}
+            <div className="max-w-7xl mx-auto px-6 py-8 h-[calc(100vh-180px)] flex flex-col gap-8">
+                {/* Stats Cards - Large Visibility */}
                 {stats && (
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-                        <Card className="p-4 text-center shadow-md">
-                            <Users className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-                            <p className="text-2xl font-bold text-slate-800">{stats.total}</p>
-                            <p className="text-xs text-slate-500">Total Peserta</p>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                        <Card className="p-6 text-center shadow-md border-t-4 border-blue-500 bg-white transform hover:scale-105 transition-transform duration-300">
+                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Total Peserta</p>
+                            <p className="text-5xl font-black text-slate-800">{stats.total}</p>
                         </Card>
-                        <Card className="p-4 text-center shadow-md">
-                            <Clock className="w-6 h-6 text-amber-500 mx-auto mb-2" />
-                            <p className="text-2xl font-bold text-slate-800">{stats.sedang}</p>
-                            <p className="text-xs text-slate-500">Sedang Ujian</p>
+                        <Card className="p-6 text-center shadow-md border-t-4 border-amber-500 bg-white transform hover:scale-105 transition-transform duration-300">
+                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Sedang Ujian</p>
+                            <p className="text-5xl font-black text-slate-800">{stats.sedang}</p>
                         </Card>
-                        <Card className="p-4 text-center shadow-md">
-                            <CheckCircle2 className="w-6 h-6 text-emerald-500 mx-auto mb-2" />
-                            <p className="text-2xl font-bold text-slate-800">{stats.selesai}</p>
-                            <p className="text-xs text-slate-500">Selesai</p>
+                        <Card className="p-6 text-center shadow-md border-t-4 border-emerald-500 bg-white transform hover:scale-105 transition-transform duration-300">
+                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Selesai</p>
+                            <p className="text-5xl font-black text-slate-800">{stats.selesai}</p>
                         </Card>
-                        <Card className="p-4 text-center shadow-md">
-                            <XCircle className="w-6 h-6 text-red-500 mx-auto mb-2" />
-                            <p className="text-2xl font-bold text-slate-800">{stats.diskualifikasi}</p>
-                            <p className="text-xs text-slate-500">Diskualifikasi</p>
-                        </Card>
-                        <Card className="p-4 text-center shadow-md">
-                            <Users className="w-6 h-6 text-slate-400 mx-auto mb-2" />
-                            <p className="text-2xl font-bold text-slate-800">{stats.belum}</p>
-                            <p className="text-xs text-slate-500">Belum Mulai</p>
+                        <Card className="p-6 text-center shadow-md border-t-4 border-slate-300 bg-white transform hover:scale-105 transition-transform duration-300">
+                            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Belum Mulai</p>
+                            <p className="text-5xl font-black text-slate-800">{stats.belum}</p>
                         </Card>
                     </div>
                 )}
 
                 {/* Leaderboard */}
-                <Card className="overflow-hidden shadow-lg">
-                    <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
-                        <h2 className="text-xl font-bold text-slate-800">Papan Peringkat</h2>
+                {/* TV Leaderboard Listing */}
+                <div className="flex-1 bg-slate-200/50 rounded-2xl p-2 md:p-4 overflow-hidden shadow-inner border border-slate-300">
+                    <div className="flex items-center justify-between px-6 py-3 mb-2 bg-slate-300/50 rounded-lg text-slate-600 font-bold uppercase tracking-wider text-sm sticky top-0 z-10">
+                        <div className="w-24">Rank</div>
+                        <div className="flex-1">Peserta</div>
+                        <div className="w-32 text-center">Status</div>
+                        <div className="w-40 text-right">Skor Live</div>
                     </div>
 
                     <div
                         ref={scrollRef}
-                        className="max-h-[calc(100vh-400px)] overflow-y-auto"
+                        className="h-full overflow-y-auto pr-2 space-y-3 pb-20 custom-scrollbar"
                     >
-                        {isLoading ? (
-                            <div className="flex items-center justify-center py-20">
-                                <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
-                            </div>
-                        ) : scores.length === 0 ? (
-                            <div className="text-center py-20 text-slate-500">
-                                <Trophy className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                                <p>Belum ada peserta yang selesai</p>
-                            </div>
-                        ) : (
-                            <table className="w-full">
-                                <thead className="bg-slate-100 sticky top-0">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Rank</th>
-                                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Nama</th>
-                                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Kelas</th>
-                                        <th className="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Skor</th>
-                                        <th className="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
-                                        <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Waktu</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    <AnimatePresence>
-                                        {scores.map((score, index) => (
-                                            <motion.tr
-                                                key={`${score.nama}-${score.waktu_submit_ms}`}
-                                                layout
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, x: -100 }}
-                                                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                                                className={`${score.status === 'DISKUALIFIKASI'
-                                                        ? 'bg-red-50/50'
-                                                        : index < 3
-                                                            ? 'bg-amber-50/50'
-                                                            : 'bg-white'
+                        <AnimatePresence mode="popLayout">
+                            {isLoading ? (
+                                <div className="flex flex-col items-center justify-center py-40 gap-4">
+                                    <Loader2 className="w-16 h-16 animate-spin text-blue-600" />
+                                    <p className="text-xl text-slate-500 font-medium">Memuat Data Live Score...</p>
+                                </div>
+                            ) : scores.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-40 gap-6 opacity-40">
+                                    <Trophy className="w-32 h-32 text-slate-400" />
+                                    <p className="text-2xl text-slate-500 font-bold">Belum ada data peserta</p>
+                                </div>
+                            ) : (
+                                scores.map((score, index) => (
+                                    <motion.div
+                                        key={`${score.nama}`}
+                                        layout
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{
+                                            opacity: 1,
+                                            scale: 1,
+                                            backgroundColor: score.skor > 0 ? ["#ffffff", "#eff6ff", "#ffffff"] : "#ffffff"
+                                        }}
+                                        exit={{ opacity: 0, scale: 0.9 }}
+                                        transition={{ duration: 0.4 }}
+                                        className={`
+                                            flex items-center justify-between p-4 md:p-6 rounded-xl shadow-sm border-l-8 
+                                            ${score.status === 'DISKUALIFIKASI' ? 'bg-red-50 border-red-500' : 'bg-white'}
+                                            ${index === 0 ? 'border-yellow-400 ring-2 ring-yellow-400/20 z-10 scale-[1.01]' :
+                                                index === 1 ? 'border-slate-300' :
+                                                    index === 2 ? 'border-amber-600' : 'border-blue-500'}
+                                        `}
+                                    >
+                                        {/* Rank Badge */}
+                                        <div className="w-24 flex items-center gap-4">
+                                            {index === 0 ? (
+                                                <div className="w-14 h-14 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-full flex items-center justify-center shadow-lg shadow-yellow-500/30 text-2xl animate-bounce">
+                                                    🏆
+                                                </div>
+                                            ) : index === 1 ? (
+                                                <div className="w-12 h-12 bg-gradient-to-br from-slate-200 to-slate-400 rounded-full flex items-center justify-center shadow-md text-xl">
+                                                    🥈
+                                                </div>
+                                            ) : index === 2 ? (
+                                                <div className="w-12 h-12 bg-gradient-to-br from-amber-600 to-amber-700 rounded-full flex items-center justify-center shadow-md text-white text-xl">
+                                                    🥉
+                                                </div>
+                                            ) : (
+                                                <div className="w-10 h-10 bg-slate-100 text-slate-500 rounded-lg flex items-center justify-center font-bold text-lg">
+                                                    #{index + 1}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* User Info */}
+                                        <div className="flex-1">
+                                            <h3 className="text-2xl font-bold text-slate-800 mb-1 leading-none">{score.nama}</h3>
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant="outline" className="text-slate-500 border-slate-300">
+                                                    {score.kelas}
+                                                </Badge>
+                                                {score.waktu_selesai && (
+                                                    <span className="text-xs text-slate-400 flex items-center gap-1">
+                                                        <Clock className="w-3 h-3" />
+                                                        Selesai: {score.waktu_selesai}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Status */}
+                                        <div className="w-32 text-center">
+                                            <Badge
+                                                className={`text-sm px-3 py-1 ${score.status === 'SELESAI' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' :
+                                                    score.status === 'SEDANG' ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 animate-pulse' :
+                                                        score.status === 'DISKUALIFIKASI' ? 'bg-red-100 text-red-700' :
+                                                            'bg-slate-100 text-slate-600'
                                                     }`}
                                             >
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-2">
-                                                        {score.rank === 1 && <span className="text-2xl">🥇</span>}
-                                                        {score.rank === 2 && <span className="text-2xl">🥈</span>}
-                                                        {score.rank === 3 && <span className="text-2xl">🥉</span>}
-                                                        {score.rank > 3 && (
-                                                            <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${score.status === 'DISKUALIFIKASI'
-                                                                    ? 'bg-red-100 text-red-600'
-                                                                    : 'bg-slate-100 text-slate-600'
-                                                                }`}>
-                                                                {score.rank}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`font-semibold ${score.status === 'DISKUALIFIKASI' ? 'text-red-600' : 'text-slate-800'
-                                                        }`}>
-                                                        {score.nama}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-slate-600">
-                                                    {score.kelas}
-                                                </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <span className={`text-2xl font-bold ${score.skor >= 80 ? 'text-emerald-600' :
-                                                            score.skor >= 60 ? 'text-blue-600' :
-                                                                score.skor >= 40 ? 'text-amber-600' : 'text-red-600'
-                                                        }`}>
-                                                        {score.skor.toFixed(1)}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <Badge variant={score.status === 'SELESAI' ? 'success' : 'destructive'}>
-                                                        {score.status}
-                                                    </Badge>
-                                                </td>
-                                                <td className="px-6 py-4 text-right text-slate-500 text-sm">
-                                                    {score.waktu_selesai}
-                                                </td>
-                                            </motion.tr>
-                                        ))}
-                                    </AnimatePresence>
-                                </tbody>
-                            </table>
-                        )}
+                                                {score.status}
+                                            </Badge>
+                                        </div>
+
+                                        {/* Score - HUGE */}
+                                        <div className="w-40 text-right">
+                                            <div className={`text-4xl md:text-5xl font-black tracking-tighter ${score.skor >= 80 ? 'text-emerald-600' :
+                                                score.skor >= 60 ? 'text-blue-600' :
+                                                    score.skor >= 40 ? 'text-amber-500' : 'text-slate-400'
+                                                }`}>
+                                                {score.skor.toFixed(1)}
+                                            </div>
+                                            <div className="text-xs text-slate-400 font-medium uppercase tracking-wider mt-1">Total Poin</div>
+                                        </div>
+                                    </motion.div>
+                                ))
+                            )}
+                        </AnimatePresence>
                     </div>
-                </Card>
+                </div>
             </div>
         </div>
     );

@@ -70,7 +70,7 @@ export interface LiveScoreEntry {
     nama: string;
     kelas: string;
     skor: number;
-    status: 'SELESAI' | 'DISKUALIFIKASI';
+    status: 'SELESAI' | 'DISKUALIFIKASI' | 'SEDANG' | 'BELUM';
     waktu_selesai: string;
     waktu_submit_ms: number;
 }
