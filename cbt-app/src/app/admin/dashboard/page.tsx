@@ -28,6 +28,8 @@ import type { User } from '@/types';
 export default function AdminDashboard() {
     const router = useRouter();
     const [isExporting, setIsExporting] = useState(false);
+    const [resetingUser, setResetingUser] = useState<string | null>(null);
+    const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     useEffect(() => {
         const auth = sessionStorage.getItem('admin_auth');
@@ -52,11 +54,28 @@ export default function AdminDashboard() {
         belum: users.filter(u => u.status_ujian === 'BELUM' || !u.status_ujian).length,
     };
 
-    const handleResetLogin = async (id_siswa: string) => {
-        if (!confirm('Reset login untuk siswa ini?')) return;
+    const handleResetLogin = async (id_siswa: string, nama: string) => {
+        if (!confirm(`Reset login untuk ${nama}?`)) return;
 
-        await resetUserLogin(id_siswa);
-        mutate();
+        setResetingUser(id_siswa);
+        setMessage(null);
+
+        try {
+            const response = await resetUserLogin(id_siswa);
+
+            if (response.success) {
+                setMessage({ type: 'success', text: `Login ${nama} berhasil di-reset` });
+                mutate();
+            } else {
+                setMessage({ type: 'error', text: response.message || 'Gagal reset login' });
+            }
+        } catch (error) {
+            console.error('Reset login error:', error);
+            setMessage({ type: 'error', text: 'Terjadi kesalahan saat reset login' });
+        } finally {
+            setResetingUser(null);
+            setTimeout(() => setMessage(null), 3000);
+        }
     };
 
     const handleExport = async () => {
@@ -207,6 +226,21 @@ export default function AdminDashboard() {
                     </motion.div>
                 </div>
 
+                {/* Message Toast */}
+                {message && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className={`mb-4 p-4 rounded-lg border ${message.type === 'success'
+                                ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                : 'bg-red-50 border-red-200 text-red-700'
+                            }`}
+                    >
+                        {message.text}
+                    </motion.div>
+                )}
+
                 {/* Actions */}
                 <div className="flex gap-3 mb-6">
                     <Button onClick={() => mutate()} variant="outline">
@@ -286,10 +320,15 @@ export default function AdminDashboard() {
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        onClick={() => handleResetLogin(user.id_siswa)}
+                                                        onClick={() => handleResetLogin(user.id_siswa, user.nama_lengkap)}
+                                                        disabled={resetingUser === user.id_siswa}
                                                         title="Reset Login"
                                                     >
-                                                        <RotateCcw className="w-4 h-4" />
+                                                        {resetingUser === user.id_siswa ? (
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                        ) : (
+                                                            <RotateCcw className="w-4 h-4" />
+                                                        )}
                                                     </Button>
                                                     <Button
                                                         variant="ghost"
