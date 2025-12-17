@@ -504,3 +504,9 @@ body {
     padding-right: 2rem;
   }
 }
+
+/* Hide Next.js dev indicator */
+[data-nextjs-toast],
+nextjs-portal {
+  display: none !important;
+}

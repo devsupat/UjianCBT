@@ -1,21 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useState } from 'react';
 import useSWR from 'swr';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Plus,
     Pencil,
     Trash2,
-    ArrowLeft,
     FileQuestion,
     Loader2,
     X,
     Save,
     Image as ImageIcon
 } from 'lucide-react';
+import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -29,7 +27,6 @@ interface QuestionWithKey extends Question {
 }
 
 export default function QuestionsManagement() {
-    const router = useRouter();
     const [showModal, setShowModal] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState<QuestionWithKey | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,13 +45,6 @@ export default function QuestionsManagement() {
         bobot: 1,
         kategori: ''
     });
-
-    useEffect(() => {
-        const auth = sessionStorage.getItem('admin_auth');
-        if (auth !== 'true') {
-            router.replace('/admin');
-        }
-    }, [router]);
 
     const { data, isLoading, mutate } = useSWR<{ success: boolean; data?: Question[] }>(
         'adminQuestions',
@@ -170,109 +160,118 @@ export default function QuestionsManagement() {
         }
     };
 
+    const headerActions = (
+        <Button 
+            onClick={() => handleOpenModal()}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/30 border-0"
+        >
+            <Plus className="w-4 h-4 mr-2" />
+            Tambah Soal
+        </Button>
+    );
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
-            {/* Header */}
-            <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm px-6 py-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Link href="/admin/dashboard">
-                            <Button variant="ghost" size="sm">
-                                <ArrowLeft className="w-4 h-4" />
-                            </Button>
-                        </Link>
-                        <h1 className="text-2xl font-bold gradient-text">Kelola Soal</h1>
+        <AdminLayout
+            title="Kelola Soal"
+            subtitle="Manajemen bank soal ujian"
+            headerActions={headerActions}
+        >
+            <Card className="overflow-hidden shadow-xl ring-1 ring-slate-200/50 rounded-2xl border-0 lg:ml-8">
+                <div className="bg-gradient-to-r from-emerald-50/50 to-white px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+                    <div>
+                        <h2 className="text-xl font-bold text-slate-800 mb-1">Bank Soal</h2>
+                        <p className="text-sm text-slate-500">Manajemen dan pengaturan soal ujian</p>
                     </div>
-
-                    <Button onClick={() => handleOpenModal()}>
-                        <Plus className="w-4 h-4" />
-                        Tambah Soal
-                    </Button>
+                    <Badge variant="outline" className="bg-white px-4 py-2 text-slate-700 border-slate-200 shadow-sm font-semibold">
+                        {questions.length} Soal
+                    </Badge>
                 </div>
-            </header>
 
-            <div className="container mx-auto px-6 py-6">
-                <Card className="overflow-hidden shadow-lg">
-                    <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-                        <h2 className="text-xl font-bold text-slate-800">Bank Soal</h2>
-                        <span className="text-slate-500">{questions.length} soal</span>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                        {isLoading ? (
-                            <div className="flex items-center justify-center py-20">
-                                <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+                <div className="overflow-x-auto">
+                    {isLoading ? (
+                        <div className="flex items-center justify-center py-24">
+                            <Loader2 className="w-12 h-12 animate-spin text-emerald-600" />
+                        </div>
+                    ) : questions.length === 0 ? (
+                        <div className="text-center py-24 text-slate-500">
+                            <div className="w-20 h-20 mx-auto mb-6 p-4 bg-slate-100 rounded-full flex items-center justify-center">
+                                <FileQuestion className="w-10 h-10 opacity-40" />
                             </div>
-                        ) : questions.length === 0 ? (
-                            <div className="text-center py-20 text-slate-500">
-                                <FileQuestion className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                                <p>Belum ada soal</p>
-                                <Button className="mt-4" onClick={() => handleOpenModal()}>
-                                    <Plus className="w-4 h-4" />
-                                    Tambah Soal Pertama
-                                </Button>
-                            </div>
-                        ) : (
-                            <table className="w-full">
-                                <thead className="bg-slate-100">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">No</th>
-                                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Pertanyaan</th>
-                                        <th className="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Tipe</th>
-                                        <th className="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Bobot</th>
-                                        <th className="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Gambar</th>
-                                        <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {questions.map((question) => (
-                                        <tr key={question.id_soal} className="hover:bg-slate-50">
-                                            <td className="px-6 py-4 font-mono text-slate-500">
-                                                {question.nomor_urut}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="font-medium text-slate-800">{truncate(question.pertanyaan, 60)}</span>
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <Badge variant={question.tipe === 'COMPLEX' ? 'warning' : 'default'}>
-                                                    {question.tipe}
-                                                </Badge>
-                                            </td>
-                                            <td className="px-6 py-4 text-center text-slate-600">{question.bobot}</td>
-                                            <td className="px-6 py-4 text-center">
-                                                {question.gambar_url ? (
-                                                    <ImageIcon className="w-4 h-4 text-emerald-500 mx-auto" />
-                                                ) : (
-                                                    <span className="text-slate-300">-</span>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end gap-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => handleOpenModal(question as QuestionWithKey)}
-                                                    >
-                                                        <Pencil className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => handleDelete(question.id_soal)}
-                                                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </Button>
+                            <p className="text-lg font-medium text-slate-600 mb-2">Belum ada soal</p>
+                            <p className="text-sm text-slate-400 mb-6">Mulai dengan menambahkan soal pertama</p>
+                            <Button 
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/30" 
+                                onClick={() => handleOpenModal()}
+                            >
+                                <Plus className="w-4 h-4 mr-2" />
+                                Tambah Soal Pertama
+                            </Button>
+                        </div>
+                    ) : (
+                        <table className="w-full">
+                            <thead className="bg-slate-50/80 border-b border-slate-100">
+                                <tr>
+                                    <th className="px-8 py-5 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">No</th>
+                                    <th className="px-8 py-5 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Pertanyaan</th>
+                                    <th className="px-8 py-5 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Tipe</th>
+                                    <th className="px-8 py-5 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Bobot</th>
+                                    <th className="px-8 py-5 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Gambar</th>
+                                    <th className="px-8 py-5 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {questions.map((question) => (
+                                    <tr key={question.id_soal} className="group hover:bg-slate-50/80 transition-colors">
+                                        <td className="px-8 py-5 font-mono text-slate-600 font-semibold">
+                                            {question.nomor_urut}
+                                        </td>
+                                        <td className="px-8 py-5">
+                                            <span className="font-medium text-slate-800 group-hover:text-emerald-600 transition-colors">{truncate(question.pertanyaan, 60)}</span>
+                                        </td>
+                                        <td className="px-8 py-5 text-center">
+                                            <Badge variant={question.tipe === 'COMPLEX' ? 'warning' : 'default'} className="shadow-sm">
+                                                {question.tipe}
+                                            </Badge>
+                                        </td>
+                                        <td className="px-8 py-5 text-center text-slate-700 font-semibold">{question.bobot}</td>
+                                        <td className="px-8 py-5 text-center">
+                                            {question.gambar_url ? (
+                                                <div className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-50">
+                                                    <ImageIcon className="w-4 h-4 text-emerald-600" />
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        )}
-                    </div>
-                </Card>
-            </div>
+                                            ) : (
+                                                <span className="text-slate-300">-</span>
+                                            )}
+                                        </td>
+                                        <td className="px-8 py-5 text-right">
+                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleOpenModal(question as QuestionWithKey)}
+                                                    className="h-9 w-9 hover:bg-blue-50 hover:text-blue-700 rounded-lg"
+                                                    title="Edit"
+                                                >
+                                                    <Pencil className="w-4 h-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleDelete(question.id_soal)}
+                                                    className="h-9 w-9 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                                                    title="Hapus"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+            </Card>
 
             {/* Modal */}
             <AnimatePresence>
@@ -287,39 +286,46 @@ export default function QuestionsManagement() {
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-white border border-slate-200 rounded-2xl w-full max-w-2xl mx-4 shadow-2xl"
+                            className="bg-white border-0 rounded-2xl w-full max-w-3xl mx-4 shadow-2xl ring-1 ring-slate-200/50"
                         >
-                            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-                                <h2 className="text-xl font-bold text-slate-800">
-                                    {editingQuestion ? 'Edit Soal' : 'Tambah Soal Baru'}
-                                </h2>
-                                <Button variant="ghost" size="sm" onClick={handleCloseModal}>
+                            <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100 bg-gradient-to-r from-emerald-50/50 to-white">
+                                <div>
+                                    <h2 className="text-2xl font-bold text-slate-800">
+                                        {editingQuestion ? 'Edit Soal' : 'Tambah Soal Baru'}
+                                    </h2>
+                                    <p className="text-sm text-slate-500 mt-1">
+                                        {editingQuestion ? 'Ubah detail soal yang dipilih' : 'Buat soal baru untuk bank soal'}
+                                    </p>
+                                </div>
+                                <Button variant="ghost" size="sm" onClick={handleCloseModal} className="h-9 w-9 rounded-lg hover:bg-slate-100">
                                     <X className="w-5 h-5" />
                                 </Button>
                             </div>
 
-                            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                                <div className="grid grid-cols-3 gap-4">
-                                    <div>
-                                        <label className="text-sm text-slate-600 mb-1 block">ID Soal</label>
+                            <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                                <div className="grid grid-cols-3 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-semibold text-slate-700 block">ID Soal</label>
                                         <Input
                                             value={formData.id_soal}
                                             onChange={(e) => setFormData({ ...formData, id_soal: e.target.value })}
                                             disabled={!!editingQuestion}
+                                            className="h-11 bg-slate-50 border-slate-200 focus:bg-white"
                                         />
                                     </div>
-                                    <div>
-                                        <label className="text-sm text-slate-600 mb-1 block">Nomor Urut</label>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-semibold text-slate-700 block">Nomor Urut</label>
                                         <Input
                                             type="number"
                                             value={formData.nomor_urut}
                                             onChange={(e) => setFormData({ ...formData, nomor_urut: parseInt(e.target.value) || 1 })}
+                                            className="h-11 bg-slate-50 border-slate-200 focus:bg-white"
                                         />
                                     </div>
-                                    <div>
-                                        <label className="text-sm text-slate-600 mb-1 block">Tipe</label>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-semibold text-slate-700 block">Tipe</label>
                                         <select
-                                            className="w-full h-11 rounded-xl border-2 border-slate-200 bg-white px-4 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                            className="w-full h-11 rounded-xl border-2 border-slate-200 bg-slate-50 px-4 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:bg-white outline-none transition-all"
                                             value={formData.tipe}
                                             onChange={(e) => setFormData({ ...formData, tipe: e.target.value as 'SINGLE' | 'COMPLEX', kunci_jawaban: '' })}
                                         >
@@ -329,27 +335,28 @@ export default function QuestionsManagement() {
                                     </div>
                                 </div>
 
-                                <div>
-                                    <label className="text-sm text-slate-600 mb-1 block">Pertanyaan</label>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-slate-700 block">Pertanyaan</label>
                                     <textarea
-                                        className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm min-h-[100px] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                        className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 px-4 py-3 text-sm min-h-[120px] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:bg-white outline-none transition-all resize-y"
                                         value={formData.pertanyaan}
                                         onChange={(e) => setFormData({ ...formData, pertanyaan: e.target.value })}
                                         placeholder="Tuliskan pertanyaan..."
                                     />
                                 </div>
 
-                                <div>
-                                    <label className="text-sm text-slate-600 mb-1 block">URL Gambar (opsional)</label>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-slate-700 block">URL Gambar <span className="text-slate-400 font-normal">(opsional)</span></label>
                                     <Input
                                         value={formData.gambar_url}
                                         onChange={(e) => setFormData({ ...formData, gambar_url: e.target.value })}
                                         placeholder="https://drive.google.com/file/d/..."
+                                        className="h-11 bg-slate-50 border-slate-200 focus:bg-white"
                                     />
                                 </div>
 
-                                <div className="space-y-3">
-                                    <label className="text-sm text-slate-600">Opsi Jawaban & Kunci</label>
+                                <div className="space-y-4 p-6 bg-slate-50 rounded-xl border border-slate-200">
+                                    <label className="text-sm font-semibold text-slate-700 block">Opsi Jawaban & Kunci</label>
                                     {['A', 'B', 'C', 'D', 'E'].map((opt) => {
                                         const key = `opsi_${opt.toLowerCase()}` as keyof typeof formData;
                                         const isKey = formData.tipe === 'COMPLEX'
@@ -357,13 +364,13 @@ export default function QuestionsManagement() {
                                             : formData.kunci_jawaban === opt;
 
                                         return (
-                                            <div key={opt} className="flex items-center gap-3">
+                                            <div key={opt} className="flex items-center gap-4">
                                                 <button
                                                     type="button"
                                                     onClick={() => handleKeySelection(opt)}
-                                                    className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold transition-all ${isKey
-                                                            ? 'bg-emerald-500 text-white shadow-md'
-                                                            : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                                    className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg transition-all shadow-sm ${isKey
+                                                        ? 'bg-emerald-500 text-white shadow-emerald-500/30 ring-2 ring-emerald-200'
+                                                        : 'bg-white text-slate-500 hover:bg-slate-100 border-2 border-slate-200'
                                                         }`}
                                                 >
                                                     {opt}
@@ -372,46 +379,53 @@ export default function QuestionsManagement() {
                                                     value={formData[key] as string}
                                                     onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
                                                     placeholder={`Opsi ${opt}${opt === 'E' ? ' (opsional)' : ''}`}
-                                                    className="flex-1"
+                                                    className="flex-1 h-11 bg-white border-slate-200 focus:bg-white"
                                                 />
                                             </div>
                                         );
                                     })}
-                                    <p className="text-xs text-slate-500">
-                                        Klik huruf untuk memilih kunci jawaban. {formData.tipe === 'COMPLEX' && 'Bisa pilih lebih dari satu.'}
+                                    <p className="text-xs text-slate-500 mt-4 pt-4 border-t border-slate-200">
+                                        💡 Klik huruf untuk memilih kunci jawaban. {formData.tipe === 'COMPLEX' && 'Bisa pilih lebih dari satu.'}
                                     </p>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-sm text-slate-600 mb-1 block">Bobot</label>
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-semibold text-slate-700 block">Bobot</label>
                                         <Input
                                             type="number"
                                             value={formData.bobot}
                                             onChange={(e) => setFormData({ ...formData, bobot: parseInt(e.target.value) || 1 })}
+                                            className="h-11 bg-slate-50 border-slate-200 focus:bg-white"
                                         />
                                     </div>
-                                    <div>
-                                        <label className="text-sm text-slate-600 mb-1 block">Kategori (opsional)</label>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-semibold text-slate-700 block">Kategori <span className="text-slate-400 font-normal">(opsional)</span></label>
                                         <Input
                                             value={formData.kategori}
                                             onChange={(e) => setFormData({ ...formData, kategori: e.target.value })}
                                             placeholder="Contoh: Matematika"
+                                            className="h-11 bg-slate-50 border-slate-200 focus:bg-white"
                                         />
                                     </div>
                                 </div>
 
-                                <div className="flex gap-3 pt-4">
-                                    <Button type="button" variant="outline" className="flex-1" onClick={handleCloseModal}>
+                                <div className="flex gap-4 pt-6 border-t border-slate-200">
+                                    <Button type="button" variant="outline" className="flex-1 h-12" onClick={handleCloseModal}>
                                         Batal
                                     </Button>
-                                    <Button type="submit" className="flex-1" disabled={isSubmitting}>
+                                    <Button type="submit" className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/30" disabled={isSubmitting}>
                                         {isSubmitting ? (
-                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            <>
+                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                Menyimpan...
+                                            </>
                                         ) : (
-                                            <Save className="w-4 h-4" />
+                                            <>
+                                                <Save className="w-4 h-4 mr-2" />
+                                                Simpan Soal
+                                            </>
                                         )}
-                                        Simpan
                                     </Button>
                                 </div>
                             </form>
@@ -419,6 +433,6 @@ export default function QuestionsManagement() {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </AdminLayout>
     );
 }
