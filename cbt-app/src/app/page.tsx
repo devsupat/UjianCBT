@@ -28,7 +28,7 @@ export default function HomePage() {
       step: '01',
       icon: LogIn,
       title: 'Login',
-      description: 'Masuk dengan token yang diberikan oleh admin atau pengawas ujian.',
+      description: 'Masuk dengan username dan password yang diberikan oleh admin atau pengawas ujian.',
       color: 'from-blue-500 to-blue-600',
     },
     {
@@ -125,7 +125,7 @@ export default function HomePage() {
               dengan <span className="text-blue-600">Live Proctoring</span> Real-time
             </p>
 
-            <p className="text-slate-500 text-lg md:text-xl max-w-2xl mx-auto mb-12 leading-relaxed">
+            <p className="text-slate-500 text-lg md:text-xl max-w-23xl mx-auto mb-12 leading-relaxed">
               Platform ujian online modern. Aman, cepat, dan terintegrasi untuk pengalaman ujian yang profesional.
             </p>
 
@@ -184,8 +184,8 @@ export default function HomePage() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 lg:py-28 px-4 sm:px-6 lg:px-8 bg-slate-50 shrink-0">
-        <div className="w-full max-w-7xl mx-auto">
+      <section className="py-20 lg:py-28 px-6 sm:px-10 lg:px-20 bg-slate-50 shrink-0">
+        <div className="w-full">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -198,12 +198,13 @@ export default function HomePage() {
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-4">
               Tiga Langkah Mudah
             </h2>
-            <p className="text-slate-500 text-lg lg:text-xl max-w-2xl mx-auto">
+            <p className="text-slate-500 text-lg lg:text-xl max-w-20xl mx-auto">
               Mulai ujian dalam hitungan menit dengan proses yang sederhana
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 lg:gap-12">
+          {/* Steps - Full width flex layout */}
+          <div className="flex flex-col md:flex-row gap-7 lg:gap-10 pt-6">
             {steps.map((item, index) => (
               <motion.div
                 key={item.step}
@@ -211,23 +212,30 @@ export default function HomePage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.15 }}
-                className="relative"
+                className="flex-1 relative"
               >
-                {/* Connector Line */}
-                {index < steps.length - 1 && (
-                  <div className="hidden sm:block absolute top-12 left-[55%] w-full h-0.5 bg-gradient-to-r from-slate-300 via-slate-200 to-transparent" />
-                )}
+                {/* Step Card */}
+                <div className="h-full bg-white rounded-2xl p-6 lg:p-10 pt-10 lg:pt-12 shadow-lg hover:shadow-xl transition-shadow border border-slate-100 text-center mt-4">
+                  {/* Step Number Badge */}
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-slate-900 text-white text-xs font-bold rounded-full tracking-widest">
+                    LANGKAH {item.step}
+                  </div>
 
-                <div className="text-center">
                   {/* Step Icon */}
-                  <div className={`inline-flex items-center justify-center w-20 h-20 lg:w-24 lg:h-24 rounded-2xl lg:rounded-3xl bg-gradient-to-br ${item.color} text-white mb-6 shadow-xl`}>
+                  <div className={`inline-flex items-center justify-center w-20 h-20 lg:w-24 lg:h-24 rounded-2xl lg:rounded-3xl bg-gradient-to-br ${item.color} text-white mb-6 shadow-xl mx-auto`}>
                     <item.icon className="w-10 h-10 lg:w-12 lg:h-12" />
                   </div>
 
-                  <div className="text-xs font-bold text-slate-400 tracking-widest mb-2">STEP {item.step}</div>
                   <h3 className="text-xl lg:text-2xl font-bold text-slate-900 mb-3">{item.title}</h3>
-                  <p className="text-slate-500 text-base lg:text-lg leading-relaxed max-w-xs mx-auto">{item.description}</p>
+                  <p className="text-slate-500 text-base lg:text-lg leading-relaxed">{item.description}</p>
                 </div>
+
+                {/* Connector Arrow - Hidden on mobile */}
+                {index < steps.length - 1 && (
+                  <div className="hidden md:flex absolute top-1/2 -right-4 lg:-right-5 -translate-y-1/2 z-10">
+                    <ChevronRight className="w-8 h-8 text-slate-300" />
+                  </div>
+                )}
               </motion.div>
             ))}
           </div>
@@ -235,8 +243,8 @@ export default function HomePage() {
       </section>
 
       {/* Bento Grid Features */}
-      <section className="py-20 lg:py-28 px-4 sm:px-6 lg:px-8 bg-white shrink-0">
-        <div className="w-full max-w-7xl mx-auto">
+      <section className="py-24 lg:py-32 px-6 sm:px-10 lg:px-20 bg-white shrink-0">
+        <div className="w-full">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -254,57 +262,60 @@ export default function HomePage() {
             </p>
           </motion.div>
 
-          {/* Bento Grid - 3 columns on large screens */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-            {/* Large Card - Ujian Online */}
+          {/* Features Grid - Clean equal layout */}
+
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+            {/* Ujian Online - Feature Card */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="sm:col-span-2 lg:col-span-1 lg:row-span-2 rounded-2xl lg:rounded-3xl p-8 lg:p-10 bg-gradient-to-br from-blue-500 to-blue-600 text-white relative overflow-hidden group"
+              className="flex-1 rounded-2xl lg:rounded-3xl p-8 lg:p-10 bg-gradient-to-br from-blue-500 to-blue-600 text-white relative overflow-hidden group"
             >
               <div className="absolute top-0 right-0 w-60 h-60 bg-white/10 rounded-full blur-3xl" />
               <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full blur-2xl" />
-              <div className="relative h-full flex flex-col min-h-[280px] lg:min-h-0">
-                <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-xl lg:rounded-2xl bg-white/20 flex items-center justify-center mb-6">
-                  <Monitor className="w-8 h-8 lg:w-10 lg:h-10" />
+              <div className="relative h-full flex flex-col">
+                <div className="w-16 h-16 rounded-xl bg-white/20 flex items-center justify-center mb-6">
+                  <Monitor className="w-8 h-8" />
                 </div>
                 <h3 className="text-2xl lg:text-3xl font-bold mb-3">Ujian Online</h3>
-                <p className="text-blue-100 text-base lg:text-xl mb-6 flex-1 leading-relaxed">
+                <p className="text-blue-100 text-base lg:text-lg mb-6 flex-1 leading-relaxed">
                   Interface modern dengan navigasi intuitif. Timer, auto-save, dan pengalaman ujian yang nyaman di semua perangkat.
                 </p>
-                <Link href="/login" className="inline-flex items-center text-base lg:text-lg font-semibold text-white hover:underline w-fit">
+                <Link href="/login" className="inline-flex items-center text-base font-semibold text-white hover:underline w-fit">
                   Mulai Sekarang <ChevronRight className="w-5 h-5 ml-1" />
                 </Link>
               </div>
             </motion.div>
 
-            {/* Feature Cards - 2x2 grid on right side on large screens */}
-            {bentoFeatures.map((feature, index) => (
-              <motion.div
-                key={feature.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: (index + 1) * 0.1 }}
-                className={`rounded-2xl lg:rounded-3xl p-6 lg:p-8 bg-gradient-to-br ${feature.gradient} border border-slate-100 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group`}
-              >
-                <div className={`w-14 h-14 lg:w-16 lg:h-16 rounded-xl lg:rounded-2xl ${feature.iconBg} flex items-center justify-center mb-4 lg:mb-6 text-white group-hover:scale-110 transition-transform shadow-lg`}>
-                  <feature.icon className="w-7 h-7 lg:w-8 lg:h-8" />
-                </div>
-                <h3 className="text-xl lg:text-2xl font-bold text-slate-900 mb-2 lg:mb-3">{feature.title}</h3>
-                <p className="text-slate-500 text-base lg:text-lg leading-relaxed">{feature.description}</p>
-              </motion.div>
-            ))}
+            {/* Other Feature Cards - 2x2 Grid */}
+            <div className="flex-[2] grid grid-cols-1 sm:grid-cols-2 gap-6 lg:gap-8">
+              {bentoFeatures.map((feature, index) => (
+                <motion.div
+                  key={feature.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: (index + 1) * 0.1 }}
+                  className={`rounded-2xl lg:rounded-3xl p-6 lg:p-8 bg-gradient-to-br ${feature.gradient} border border-slate-100 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group`}
+                >
+                  <div className={`w-14 h-14 rounded-xl ${feature.iconBg} flex items-center justify-center mb-4 text-white group-hover:scale-110 transition-transform shadow-lg`}>
+                    <feature.icon className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-xl lg:text-2xl font-bold text-slate-900 mb-2">{feature.title}</h3>
+                  <p className="text-slate-500 text-base lg:text-lg leading-relaxed">{feature.description}</p>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="py-6 px-6 bg-slate-100 border-t border-slate-200 shrink-0">
-        <div className="max-w-6xl mx-auto text-center">
-          <p className="text-slate-400 text-sm">
-            &copy; {new Date().getFullYear()} All rights reserved.
+        <div className="w-full flex justify-center">
+          <p className="text-slate-500 text-sm font-medium text-center">
+            Created by Ahmad Saoghi, Guru SDN Sukasari 4
           </p>
         </div>
       </footer>
