@@ -12,264 +12,221 @@ import {
   Lock,
   BarChart3,
   Info,
-  Users,
-  FileCheck,
-  TrendingUp,
-  Sparkles,
   Zap,
   CheckCircle2,
   ChevronRight,
+  ClipboardList,
+  Award,
+  UserCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function HomePage() {
-  const features = [
+  // How it works steps
+  const steps = [
     {
-      icon: Monitor,
-      title: 'Ujian Online',
-      description: 'Interface modern dengan timer, auto-save, dan navigasi intuitif untuk pengalaman ujian yang lancar.',
-      gradient: 'from-blue-500 to-cyan-500',
-      iconBg: 'icon-gradient-blue',
+      step: '01',
+      icon: LogIn,
+      title: 'Login',
+      description: 'Masuk dengan token yang diberikan oleh admin atau pengawas ujian.',
+      color: 'from-blue-500 to-blue-600',
     },
+    {
+      step: '02',
+      icon: ClipboardList,
+      title: 'Kerjakan Ujian',
+      description: 'Jawab soal dengan interface yang intuitif. Timer dan auto-save aktif.',
+      color: 'from-purple-500 to-purple-600',
+    },
+    {
+      step: '03',
+      icon: Award,
+      title: 'Lihat Hasil',
+      description: 'Skor langsung muncul di Live Score. Peringkat update real-time.',
+      color: 'from-emerald-500 to-emerald-600',
+    },
+  ];
+
+  // Bento grid features
+  const bentoFeatures = [
     {
       icon: Lock,
       title: 'Anti Cheat',
-      description: 'Deteksi tab switch, copy-paste, dan proteksi keyboard shortcuts untuk keamanan maksimal.',
-      gradient: 'from-purple-500 to-pink-500',
-      iconBg: 'icon-gradient-purple',
+      description: 'Proteksi keyboard shortcuts, deteksi tab switch, dan copy-paste.',
+      gradient: 'from-red-500/10 to-orange-500/10',
+      iconBg: 'bg-red-500',
+    },
+    {
+      icon: Zap,
+      title: 'Real-time Sync',
+      description: 'Semua data tersinkronisasi secara instan.',
+      gradient: 'from-amber-500/10 to-yellow-500/10',
+      iconBg: 'bg-amber-500',
     },
     {
       icon: Trophy,
       title: 'Live Score',
-      description: 'Papan peringkat real-time dengan animasi dinamis dan update instan.',
-      gradient: 'from-amber-500 to-orange-500',
-      iconBg: 'icon-gradient-amber',
+      description: 'Papan peringkat dengan update real-time dan animasi dinamis.',
+      gradient: 'from-purple-500/10 to-pink-500/10',
+      iconBg: 'bg-purple-500',
     },
     {
       icon: BarChart3,
-      title: 'Admin Dashboard',
-      description: 'Monitoring peserta dan pengelolaan soal secara real-time dengan analitik lengkap.',
-      gradient: 'from-emerald-500 to-teal-500',
-      iconBg: 'icon-gradient-emerald',
+      title: 'Dashboard Admin',
+      description: 'Monitoring lengkap dengan analitik dan pengelolaan soal.',
+      gradient: 'from-emerald-500/10 to-teal-500/10',
+      iconBg: 'bg-emerald-500',
     },
   ];
 
-  const stats = [
-    { icon: Users, value: '1000+', label: 'Peserta Aktif', color: 'text-blue-600' },
-    { icon: FileCheck, value: '50+', label: 'Ujian Diproses', color: 'text-emerald-600' },
-    { icon: TrendingUp, value: '99.9%', label: 'Uptime System', color: 'text-purple-600' },
-  ];
-
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden hero-gradient-bg">
-
-      {/* Animated Background Orbs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="orb orb-blue w-[500px] h-[500px] -top-48 -right-48 animate-float-slow" />
-        <div className="orb orb-purple w-[400px] h-[400px] top-1/3 -left-32 animate-float" />
-        <div className="orb orb-cyan w-[300px] h-[300px] bottom-1/4 right-1/4 animate-float-slow" style={{ animationDelay: '-2s' }} />
-        <div className="orb orb-amber w-[200px] h-[200px] bottom-20 left-1/3 animate-float" style={{ animationDelay: '-4s' }} />
-      </div>
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 via-white to-slate-50">
 
       {/* Announcement Bar */}
-      <div className="relative z-10 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-b border-amber-200/50 px-4 py-3">
-        <div className="container mx-auto flex items-center justify-center gap-2 text-sm">
-          <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100/80 text-amber-800 font-medium">
-            <Info className="w-4 h-4" />
-            <span>Info: Ini adalah simulasi internal, bukan ujian resmi.</span>
-          </span>
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-center shrink-0">
+        <div className="flex items-center justify-center gap-2 text-sm text-white">
+          <Info className="w-4 h-4 shrink-0" />
+          <span><strong>Info:</strong> Ini adalah simulasi internal, bukan ujian resmi.</span>
         </div>
       </div>
 
-      {/* Hero Section */}
-      <section className="relative z-10 flex-1 flex items-center justify-center py-16 md:py-24 px-4">
-        <div className="container mx-auto text-center max-w-5xl">
+      {/* Hero Section - Takes most of the viewport */}
+      <section className="relative flex-1 flex items-center justify-center overflow-hidden bg-white px-6 py-16 lg:py-20">
+        {/* Animated Grid Background */}
+        <div className="absolute inset-0 opacity-[0.02]">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }} />
+        </div>
+
+        {/* Gradient Blobs */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-400/15 rounded-full blur-[150px]" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-400/15 rounded-full blur-[150px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-300/10 rounded-full blur-[180px]" />
+
+        <div className="relative w-full max-w-5xl mx-auto text-center">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: 'easeOut' }}
+            transition={{ duration: 0.5 }}
           >
             {/* Badge */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-full glass-premium text-blue-700 text-sm font-semibold mb-8 shadow-lg"
-            >
-              <Sparkles className="w-4 h-4 text-amber-500" />
-              <span>Computer Based Test System</span>
-              <Sparkles className="w-4 h-4 text-amber-500" />
-            </motion.div>
+            <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-blue-50 text-blue-700 text-sm font-semibold mb-8 border border-blue-100 shadow-sm">
+              <GraduationCap className="w-4 h-4" />
+              Computer Based Test System
+            </div>
 
-            {/* Main Title */}
-            <h1 className="text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black mb-6 tracking-tight leading-[1.1]">
-              <span className="text-gradient-hero">CBT Serverless</span>
+            {/* Title */}
+            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-slate-900 mb-6 tracking-tight leading-[1.1]">
+              CBT <span className="text-blue-600">Serverless</span>
             </h1>
 
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-              className="text-xl md:text-2xl lg:text-3xl font-medium text-slate-600 mb-4"
-            >
-              dengan <span className="text-blue-600 font-semibold">Live Proctoring</span> Real-time
-            </motion.p>
+            <p className="text-xl sm:text-2xl md:text-3xl text-slate-600 font-medium mb-4">
+              dengan <span className="text-blue-600">Live Proctoring</span> Real-time
+            </p>
 
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-              className="text-base md:text-lg text-slate-500 max-w-2xl mx-auto mb-12 leading-relaxed"
-            >
-              Platform ujian online modern yang aman, cepat, dan terintegrasi.
-              Didesain untuk pengalaman ujian yang mulus dan profesional.
-            </motion.p>
+            <p className="text-slate-500 text-lg md:text-xl max-w-2xl mx-auto mb-12 leading-relaxed">
+              Platform ujian online modern. Aman, cepat, dan terintegrasi untuk pengalaman ujian yang profesional.
+            </p>
 
             {/* CTA Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.6 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4"
-            >
-              <Button size="xl" className="w-full sm:w-auto btn-premium group" asChild>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+              <Button size="xl" className="w-full sm:w-auto shadow-xl shadow-blue-500/30 text-base px-8" asChild>
                 <Link href="/login">
                   <LogIn className="w-5 h-5" />
-                  <span>Mulai Ujian</span>
-                  <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                  Mulai Ujian
+                  <ArrowRight className="w-5 h-5" />
                 </Link>
               </Button>
 
-              <Button variant="outline" size="xl" className="w-full sm:w-auto bg-white/70 backdrop-blur-sm hover:bg-white group" asChild>
+              <Button
+                variant="outline"
+                size="xl"
+                className="w-full sm:w-auto border-2 border-amber-400 text-amber-600 hover:bg-amber-50 hover:border-amber-500 text-base px-8"
+                asChild
+              >
                 <Link href="/live-score">
-                  <Trophy className="w-5 h-5 text-amber-500" />
-                  <span>Live Score</span>
-                  <ChevronRight className="w-5 h-5 text-slate-400 transition-transform group-hover:translate-x-1" />
+                  <Trophy className="w-5 h-5" />
+                  Live Score
                 </Link>
               </Button>
 
-              <Button variant="secondary" size="xl" className="w-full sm:w-auto bg-slate-100/80 backdrop-blur-sm hover:bg-slate-200 group" asChild>
+              <Button
+                variant="secondary"
+                size="xl"
+                className="w-full sm:w-auto bg-slate-900 text-white hover:bg-slate-800 text-base px-8"
+                asChild
+              >
                 <Link href="/admin">
-                  <Shield className="w-5 h-5 text-slate-600" />
-                  <span>Admin Panel</span>
-                  <ChevronRight className="w-5 h-5 text-slate-400 transition-transform group-hover:translate-x-1" />
+                  <Shield className="w-5 h-5" />
+                  Admin Panel
                 </Link>
               </Button>
-            </motion.div>
+            </div>
 
-            {/* Trust Indicators */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.7, duration: 0.6 }}
-              className="mt-12 flex flex-wrap items-center justify-center gap-6 text-sm text-slate-500"
-            >
+            {/* Trust Badges */}
+            <div className="flex flex-wrap items-center justify-center gap-8 text-sm text-slate-500">
               <span className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                 100% Secure
               </span>
               <span className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-amber-500" />
-                Real-time Sync
+                <Zap className="w-5 h-5 text-amber-500" />
+                Serverless Architecture
               </span>
               <span className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-blue-500" />
-                Serverless
+                <UserCheck className="w-5 h-5 text-blue-500" />
+                Anti-Cheat System
               </span>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="relative z-10 py-12 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="glass-premium rounded-3xl p-8 md:p-10"
-          >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-4">
-              {stats.map((stat, index) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1, duration: 0.5 }}
-                  className="text-center"
-                >
-                  <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br ${stat.color === 'text-blue-600' ? 'from-blue-100 to-blue-50' : stat.color === 'text-emerald-600' ? 'from-emerald-100 to-emerald-50' : 'from-purple-100 to-purple-50'} mb-4`}>
-                    <stat.icon className={`w-7 h-7 ${stat.color}`} />
-                  </div>
-                  <div className={`text-4xl md:text-5xl font-black stat-number ${stat.color} mb-2`}>
-                    {stat.value}
-                  </div>
-                  <div className="text-slate-500 font-medium">{stat.label}</div>
-                </motion.div>
-              ))}
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="relative z-10 py-16 md:py-24 px-4">
-        <div className="container mx-auto max-w-6xl">
-          {/* Section Header */}
+      {/* How It Works Section */}
+      <section className="py-20 lg:py-28 px-4 sm:px-6 lg:px-8 bg-slate-50 shrink-0">
+        <div className="w-full max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
-            <span className="inline-block px-4 py-1.5 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold mb-4">
-              Fitur Unggulan
+            <span className="inline-block px-5 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold mb-6">
+              Cara Kerja
             </span>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-800 mb-4">
-              Semua yang Anda Butuhkan
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-4">
+              Tiga Langkah Mudah
             </h2>
-            <p className="text-slate-500 text-lg max-w-2xl mx-auto">
-              Fitur lengkap untuk pengalaman ujian online yang profesional dan aman
+            <p className="text-slate-500 text-lg lg:text-xl max-w-2xl mx-auto">
+              Mulai ujian dalam hitungan menit dengan proses yang sederhana
             </p>
           </motion.div>
 
-          {/* Feature Cards */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature, index) => (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 lg:gap-12">
+            {steps.map((item, index) => (
               <motion.div
-                key={feature.title}
+                key={item.step}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: index * 0.1, duration: 0.5 }}
-                className="group"
+                transition={{ delay: index * 0.15 }}
+                className="relative"
               >
-                <div className="glass-card rounded-3xl p-6 h-full relative overflow-hidden">
-                  {/* Gradient overlay on hover */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
+                {/* Connector Line */}
+                {index < steps.length - 1 && (
+                  <div className="hidden sm:block absolute top-12 left-[55%] w-full h-0.5 bg-gradient-to-r from-slate-300 via-slate-200 to-transparent" />
+                )}
 
-                  {/* Icon */}
-                  <div className={`relative w-14 h-14 rounded-2xl ${feature.iconBg} flex items-center justify-center mb-5 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                    <feature.icon className="w-7 h-7 text-white" />
+                <div className="text-center">
+                  {/* Step Icon */}
+                  <div className={`inline-flex items-center justify-center w-20 h-20 lg:w-24 lg:h-24 rounded-2xl lg:rounded-3xl bg-gradient-to-br ${item.color} text-white mb-6 shadow-xl`}>
+                    <item.icon className="w-10 h-10 lg:w-12 lg:h-12" />
                   </div>
 
-                  {/* Content */}
-                  <h3 className="text-xl font-bold mb-3 text-slate-800 group-hover:text-blue-600 transition-colors">
-                    {feature.title}
-                  </h3>
-                  <p className="text-slate-500 text-sm leading-relaxed">
-                    {feature.description}
-                  </p>
-
-                  {/* Arrow indicator */}
-                  <div className="mt-4 flex items-center text-blue-600 font-medium text-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span>Pelajari lebih lanjut</span>
-                    <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
-                  </div>
+                  <div className="text-xs font-bold text-slate-400 tracking-widest mb-2">STEP {item.step}</div>
+                  <h3 className="text-xl lg:text-2xl font-bold text-slate-900 mb-3">{item.title}</h3>
+                  <p className="text-slate-500 text-base lg:text-lg leading-relaxed max-w-xs mx-auto">{item.description}</p>
                 </div>
               </motion.div>
             ))}
@@ -277,71 +234,78 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="relative z-10 py-16 px-4">
-        <div className="container mx-auto max-w-4xl">
+      {/* Bento Grid Features */}
+      <section className="py-20 lg:py-28 px-4 sm:px-6 lg:px-8 bg-white shrink-0">
+        <div className="w-full max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 p-10 md:p-14 text-center shadow-2xl shadow-blue-500/25"
+            className="text-center mb-16"
           >
-            {/* Background decoration */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
-
-            <div className="relative z-10">
-              <GraduationCap className="w-16 h-16 text-white/80 mx-auto mb-6" />
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Siap Memulai Ujian?
-              </h2>
-              <p className="text-blue-100 text-lg mb-8 max-w-xl mx-auto">
-                Bergabung sekarang dan rasakan pengalaman ujian online yang berbeda.
-                Cepat, aman, dan profesional.
-              </p>
-              <Button size="xl" className="bg-white text-blue-700 hover:bg-blue-50 btn-premium" asChild>
-                <Link href="/login">
-                  <LogIn className="w-5 h-5" />
-                  <span>Mulai Sekarang</span>
-                  <ArrowRight className="w-5 h-5" />
-                </Link>
-              </Button>
-            </div>
+            <span className="inline-block px-5 py-2 rounded-full bg-emerald-100 text-emerald-700 text-sm font-semibold mb-6">
+              Fitur Unggulan
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 mb-4">
+              Semua yang Anda Butuhkan
+            </h2>
+            <p className="text-slate-500 text-lg lg:text-xl max-w-2xl mx-auto">
+              Fitur lengkap untuk pengalaman ujian online yang profesional
+            </p>
           </motion.div>
+
+          {/* Bento Grid - 3 columns on large screens */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            {/* Large Card - Ujian Online */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="sm:col-span-2 lg:col-span-1 lg:row-span-2 rounded-2xl lg:rounded-3xl p-8 lg:p-10 bg-gradient-to-br from-blue-500 to-blue-600 text-white relative overflow-hidden group"
+            >
+              <div className="absolute top-0 right-0 w-60 h-60 bg-white/10 rounded-full blur-3xl" />
+              <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full blur-2xl" />
+              <div className="relative h-full flex flex-col min-h-[280px] lg:min-h-0">
+                <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-xl lg:rounded-2xl bg-white/20 flex items-center justify-center mb-6">
+                  <Monitor className="w-8 h-8 lg:w-10 lg:h-10" />
+                </div>
+                <h3 className="text-2xl lg:text-3xl font-bold mb-3">Ujian Online</h3>
+                <p className="text-blue-100 text-base lg:text-xl mb-6 flex-1 leading-relaxed">
+                  Interface modern dengan navigasi intuitif. Timer, auto-save, dan pengalaman ujian yang nyaman di semua perangkat.
+                </p>
+                <Link href="/login" className="inline-flex items-center text-base lg:text-lg font-semibold text-white hover:underline w-fit">
+                  Mulai Sekarang <ChevronRight className="w-5 h-5 ml-1" />
+                </Link>
+              </div>
+            </motion.div>
+
+            {/* Feature Cards - 2x2 grid on right side on large screens */}
+            {bentoFeatures.map((feature, index) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: (index + 1) * 0.1 }}
+                className={`rounded-2xl lg:rounded-3xl p-6 lg:p-8 bg-gradient-to-br ${feature.gradient} border border-slate-100 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group`}
+              >
+                <div className={`w-14 h-14 lg:w-16 lg:h-16 rounded-xl lg:rounded-2xl ${feature.iconBg} flex items-center justify-center mb-4 lg:mb-6 text-white group-hover:scale-110 transition-transform shadow-lg`}>
+                  <feature.icon className="w-7 h-7 lg:w-8 lg:h-8" />
+                </div>
+                <h3 className="text-xl lg:text-2xl font-bold text-slate-900 mb-2 lg:mb-3">{feature.title}</h3>
+                <p className="text-slate-500 text-base lg:text-lg leading-relaxed">{feature.description}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 py-10 px-4 border-t border-slate-200/50 bg-white/30 backdrop-blur-sm">
-        <div className="container mx-auto max-w-6xl">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            {/* Logo */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <GraduationCap className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xl font-bold text-slate-800">CBT System</span>
-            </div>
-
-            {/* Links */}
-            <div className="flex items-center gap-6 text-sm">
-              <Link href="/login" className="text-slate-600 hover:text-blue-600 transition-colors font-medium">
-                Mulai Ujian
-              </Link>
-              <Link href="/live-score" className="text-slate-600 hover:text-blue-600 transition-colors font-medium">
-                Live Score
-              </Link>
-              <Link href="/admin" className="text-slate-600 hover:text-blue-600 transition-colors font-medium">
-                Admin
-              </Link>
-            </div>
-
-            {/* Copyright */}
-            <p className="text-slate-400 text-sm">
-              &copy; {new Date().getFullYear()} CBT System. All rights reserved.
-            </p>
-          </div>
+      <footer className="py-6 px-6 bg-slate-100 border-t border-slate-200 shrink-0">
+        <div className="max-w-6xl mx-auto text-center">
+          <p className="text-slate-400 text-sm">
+            &copy; {new Date().getFullYear()} All rights reserved.
+          </p>
         </div>
       </footer>
     </div>
