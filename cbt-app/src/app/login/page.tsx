@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { LogIn, User, Lock, AlertCircle, Loader2, Info } from 'lucide-react';
+import { LogIn, User, Lock, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,17 +51,7 @@ export default function LoginPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
-            {/* Announcement Bar */}
-            <div className="announcement-bar px-4 py-2 text-center text-sm">
-                <div className="flex items-center justify-center gap-2">
-                    <Info className="w-4 h-4 flex-shrink-0" />
-                    <span>
-                        <strong>Penting:</strong> Kegiatan ini merupakan latihan/simulasi internal sekolah dan bukan Tes Kemampuan Akademik (TKA) resmi dari Kemendikdasmen.
-                    </span>
-                </div>
-            </div>
-
-            <div className="flex items-center justify-center px-4 py-12 min-h-[calc(100vh-44px)]">
+            <div className="flex items-center justify-center px-4 py-12 min-h-screen">
                 {/* Background decoration */}
                 <div className="absolute inset-0 overflow-hidden pointer-events-none">
                     <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-200/40 rounded-full blur-3xl" />

@@ -14,8 +14,7 @@ import {
     Wifi,
     WifiOff,
     Loader2,
-    XCircle,
-    Info
+    XCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -251,16 +250,6 @@ export default function ExamPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
-            {/* Announcement Bar */}
-            <div className="announcement-bar px-4 py-2 text-center text-sm">
-                <div className="flex items-center justify-center gap-2">
-                    <Info className="w-4 h-4 flex-shrink-0" />
-                    <span>
-                        <strong>Penting:</strong> Kegiatan ini merupakan latihan/simulasi internal sekolah dan bukan Tes Kemampuan Akademik (TKA) resmi dari Kemendikdasmen.
-                    </span>
-                </div>
-            </div>
-
             {/* Header */}
             <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
                 <div className="container mx-auto px-4 py-3 flex items-center justify-between">
@@ -378,8 +367,8 @@ export default function ExamPage() {
                                                     key={option}
                                                     onClick={() => handleAnswerSelect(currentQuestion.id_soal, option, currentQuestion.tipe === 'COMPLEX')}
                                                     className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-start gap-3 ${isSelected
-                                                            ? 'border-blue-500 bg-blue-50 text-blue-800'
-                                                            : 'border-slate-200 hover:border-blue-200 hover:bg-slate-50 text-slate-700'
+                                                        ? 'border-blue-500 bg-blue-50 text-blue-800'
+                                                        : 'border-slate-200 hover:border-blue-200 hover:bg-slate-50 text-slate-700'
                                                         }`}
                                                 >
                                                     <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm flex-shrink-0 ${isSelected ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-600'
