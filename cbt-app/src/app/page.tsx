@@ -274,17 +274,14 @@ export default function HomePage() {
             >
               <div className="absolute top-0 right-0 w-60 h-60 bg-white/10 rounded-full blur-3xl" />
               <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full blur-2xl" />
-              <div className="relative h-full flex flex-col">
+              <div className="relative h-full flex flex-col items-center text-center">
                 <div className="w-16 h-16 rounded-xl bg-white/20 flex items-center justify-center mb-6">
                   <Monitor className="w-8 h-8" />
                 </div>
                 <h3 className="text-2xl lg:text-3xl font-bold mb-3">Ujian Online</h3>
-                <p className="text-blue-100 text-base lg:text-lg mb-6 flex-1 leading-relaxed">
+                <p className="text-blue-100 text-base lg:text-lg leading-relaxed">
                   Interface modern dengan navigasi intuitif. Timer, auto-save, dan pengalaman ujian yang nyaman di semua perangkat.
                 </p>
-                <Link href="/login" className="inline-flex items-center text-base font-semibold text-white hover:underline w-fit">
-                  Mulai Sekarang <ChevronRight className="w-5 h-5 ml-1" />
-                </Link>
               </div>
             </motion.div>
 
