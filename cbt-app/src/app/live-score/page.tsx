@@ -23,7 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { getLiveScore, getUsers } from '@/lib/api';
 import type { LiveScoreEntry, LiveScoreStats, User } from '@/types';
 
-const PIN_CODE = process.env.NEXT_PUBLIC_LIVE_SCORE_PIN || '2025';
+const PIN_CODE = process.env.NEXT_PUBLIC_LIVE_SCORE_PIN || '2026';
 
 // Combined score entry for leaderboard
 interface LeaderboardEntry {
@@ -433,8 +433,8 @@ export default function LiveScorePage() {
                                         {/* Skor */}
                                         <div className="w-32 text-center">
                                             <div className={`text-3xl font-black tracking-tighter ${entry.skor >= 80 ? 'text-emerald-600' :
-                                                    entry.skor >= 60 ? 'text-blue-600' :
-                                                        entry.skor >= 40 ? 'text-amber-500' : 'text-slate-400'
+                                                entry.skor >= 60 ? 'text-blue-600' :
+                                                    entry.skor >= 40 ? 'text-amber-500' : 'text-slate-400'
                                                 }`}>
                                                 {entry.skor.toFixed(1)}
                                             </div>
@@ -463,9 +463,9 @@ export default function LiveScorePage() {
                                         <div className="w-32 text-center">
                                             <Badge
                                                 className={`text-sm px-3 py-1 ${entry.status === 'SELESAI' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' :
-                                                        entry.status === 'SEDANG' ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
-                                                            entry.status === 'DISKUALIFIKASI' ? 'bg-red-100 text-red-700' :
-                                                                'bg-slate-100 text-slate-600'
+                                                    entry.status === 'SEDANG' ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
+                                                        entry.status === 'DISKUALIFIKASI' ? 'bg-red-100 text-red-700' :
+                                                            'bg-slate-100 text-slate-600'
                                                     }`}
                                             >
                                                 {entry.isLive && <Play className="w-3 h-3 mr-1 inline animate-pulse" />}

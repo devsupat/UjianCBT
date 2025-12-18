@@ -1,5 +1,5 @@
 # Product Requirements Document (PRD) - Serverless CBT & Live Proctoring
-**Version: 2.0** | **Last Updated: December 2025**
+**Version: 2.0** | **Last Updated: December 2026**
 
 ---
 
@@ -34,7 +34,7 @@ Project membutuhkan **1 Spreadsheet** dengan **4 Tab (Worksheets)**.
 | `exam_name` | Ujian Akhir Semester | Nama Ujian |
 | `exam_duration` | 90 | Durasi ujian (menit) |
 | `admin_password` | admin123 | Password masuk dashboard |
-| `live_score_pin` | 2025 | PIN akses halaman Live Score |
+| `live_score_pin` | 2026 | PIN akses halaman Live Score |
 | `max_violations` | 3 | Batas toleransi kecurangan |
 | `auto_submit` | TRUE | Auto-submit saat timer habis |
 | `shuffle_questions` | FALSE | Acak urutan soal per siswa |
