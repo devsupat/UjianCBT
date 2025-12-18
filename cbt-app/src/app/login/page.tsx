@@ -56,7 +56,7 @@ export default function LoginPage() {
             <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
                 {/* Background Image */}
                 <Image
-                    src="https://i.imgur.com/WZYIGig.png"
+                    src="https://i.imgur.com/7FixKW0.jpeg"
                     alt="School Building"
                     fill
                     className="object-cover"
