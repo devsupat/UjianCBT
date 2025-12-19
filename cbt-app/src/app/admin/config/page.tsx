@@ -37,6 +37,7 @@ export default function ConfigPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [copiedExamPin, setCopiedExamPin] = useState(false);
+    const [examPinChanged, setExamPinChanged] = useState(false);
 
     const [formData, setFormData] = useState({
         exam_name: '',
@@ -87,13 +88,9 @@ export default function ConfigPage() {
                 updates.push(updateConfig('live_score_pin', formData.live_score_pin));
             }
 
-            // Handle exam PIN separately using setExamPin
-            if (formData.exam_pin !== undefined && formData.exam_pin !== null) {
-                // Get admin password from form or sessionStorage
-                const adminPassword = formData.admin_password || sessionStorage.getItem('admin_password') || '';
-                if (adminPassword) {
-                    updates.push(setExamPin(formData.exam_pin, adminPassword));
-                }
+            // Handle exam PIN - only save if changed
+            if (examPinChanged) {
+                updates.push(updateConfig('exam_pin', formData.exam_pin));
             }
 
             if (updates.length === 0) {
@@ -106,6 +103,7 @@ export default function ConfigPage() {
 
             // Clear sensitive fields after save
             setFormData(prev => ({ ...prev, admin_password: '', live_score_pin: '', exam_pin: '' }));
+            setExamPinChanged(false);
             mutate(); // Refresh data
 
             setSaveMessage({ type: 'success', text: 'Settings saved successfully' });
@@ -295,7 +293,10 @@ export default function ConfigPage() {
                                             <Input
                                                 type={showExamPin ? 'text' : 'password'}
                                                 value={formData.exam_pin}
-                                                onChange={(e) => setFormData({ ...formData, exam_pin: e.target.value.toUpperCase() })}
+                                                onChange={(e) => {
+                                                    setFormData({ ...formData, exam_pin: e.target.value.toUpperCase() });
+                                                    setExamPinChanged(true);
+                                                }}
                                                 placeholder="Enter PIN (e.g., 2024 or ABC123)"
                                                 maxLength={10}
                                                 className="pr-12 h-12 bg-white border-2 border-emerald-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all font-mono text-lg"
@@ -319,6 +320,7 @@ export default function ConfigPage() {
                                                     const randomPin = Math.floor(100000 + Math.random() * 900000).toString();
                                                     setFormData({ ...formData, exam_pin: randomPin });
                                                     setShowExamPin(true);
+                                                    setExamPinChanged(true);
                                                 }}
                                                 className="flex-1 h-9 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
                                             >
@@ -355,7 +357,10 @@ export default function ConfigPage() {
                                                 type="button"
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={() => setFormData({ ...formData, exam_pin: '' })}
+                                                onClick={() => {
+                                                    setFormData({ ...formData, exam_pin: '' });
+                                                    setExamPinChanged(true);
+                                                }}
                                                 className="h-9 border-red-300 text-red-600 hover:bg-red-50 px-3"
                                             >
                                                 <Trash2 className="w-3.5 h-3.5" />
