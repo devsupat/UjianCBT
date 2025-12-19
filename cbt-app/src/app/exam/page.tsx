@@ -15,8 +15,8 @@ import {
     XCircle,
     Flag,
     X,
-    LogOut,
-    MapPin
+    Shield,
+    List
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useExamStore } from '@/store/examStore';
@@ -257,85 +257,56 @@ export default function ExamPage() {
 
     const currentQuestion: Question | undefined = questions[currentQuestionIndex];
     const answeredCount = Object.keys(answers).length;
+    const unansweredCount = questions.length - answeredCount;
 
     return (
-        <div className="min-h-screen bg-slate-100">
-            {/* ==================== BLUE HEADER ==================== */}
-            <header className="sticky top-0 z-40 bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg">
-                <div className="w-full px-4 md:px-6 lg:px-8 py-3">
-                    <div className="flex items-center justify-between">
-                        {/* Left: Logo & School Name */}
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                                <span className="text-blue-600 font-bold text-lg">📚</span>
-                            </div>
-                            <div className="hidden sm:block">
-                                <p className="font-bold text-white text-sm">CBT Ujian Online Hebat</p>
-                                <p className="text-blue-100 text-xs">{user.kelas || 'SD Negeri 1 Ciparay'}</p>
-                            </div>
+        <div className="h-screen flex flex-col overflow-hidden" style={{ backgroundColor: '#f1f5f9' }}>
+            {/* ==================== WARNING BAR ==================== */}
+            <div
+                className="flex-shrink-0 text-white flex items-center justify-center gap-3 py-2 px-6 text-sm font-semibold"
+                style={{
+                    background: 'linear-gradient(90deg, #dc2626 0%, #ef4444 50%, #dc2626 100%)',
+                    backgroundSize: '200% 100%',
+                    animation: 'warningSlide 3s linear infinite'
+                }}
+            >
+                <AlertTriangle className="w-5 h-5" />
+                <span>MODE UJIAN AKTIF - Jangan keluar dari halaman ini atau menutup browser</span>
+            </div>
+
+            {/* ==================== MAIN HEADER ==================== */}
+            <header
+                className="flex-shrink-0 text-white px-8 py-4"
+                style={{ backgroundColor: '#1e3a8a', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+            >
+                <div className="flex justify-between items-center">
+                    {/* Left: Logo & Title */}
+                    <div className="flex items-center gap-4">
+                        <Shield className="w-8 h-8" />
+                        <div>
+                            <h1 className="text-lg font-bold">CBT Ujian Online Hebat 2024</h1>
+                            <p className="text-sm opacity-90">Peserta: {user.nama_lengkap}</p>
                         </div>
+                    </div>
 
-                        {/* Center: Timer */}
-                        <div className="flex flex-col items-center">
-                            <span className="text-xs text-blue-100 mb-1">Sisa Waktu</span>
-                            <div className="bg-white/20 backdrop-blur-sm px-4 py-1.5 rounded-lg">
-                                <span className="text-2xl font-mono font-bold text-white tracking-wider">
-                                    {formatTime(timeRemaining)}
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Right: User & Exit */}
-                        <div className="flex items-center gap-3">
-                            <div className="hidden sm:flex items-center gap-2">
-                                <div className="w-9 h-9 bg-amber-400 rounded-full flex items-center justify-center text-amber-900 font-bold text-sm">
-                                    {user.nama_lengkap?.charAt(0).toUpperCase() || 'U'}
-                                </div>
-                                <span className="text-sm font-medium text-white">{user.nama_lengkap}</span>
-                            </div>
-
-                            {/* Mobile: Question Map Button */}
-                            <button
-                                onClick={() => setShowMobileDrawer(true)}
-                                className="md:hidden flex items-center gap-1.5 px-3 py-2 bg-white/20 text-white text-sm font-medium rounded-lg hover:bg-white/30 transition-colors"
-                            >
-                                <MapPin className="w-4 h-4" />
-                                <span>Peta</span>
-                            </button>
-
-                            <button
-                                onClick={() => setShowSubmitConfirm(true)}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-colors"
-                            >
-                                <LogOut className="w-4 h-4" />
-                                <span className="hidden sm:inline">Keluar</span>
-                            </button>
+                    {/* Right: Timer */}
+                    <div className="text-right">
+                        <div className="text-xs opacity-90 mb-1">Sisa Waktu</div>
+                        <div
+                            className="text-2xl font-bold font-mono"
+                            style={{ animation: 'pulse 1.5s ease-in-out infinite' }}
+                        >
+                            {formatTime(timeRemaining)}
                         </div>
                     </div>
                 </div>
             </header>
 
-            {/* ==================== PROGRESS BAR ==================== */}
-            <div className="bg-white border-b border-slate-200 px-6 md:px-10 lg:px-16 py-4">
-                <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600 font-medium">Progress Pengerjaan</span>
-                    <span className="text-sm text-slate-500">{answeredCount} / {questions.length} Soal</span>
-                </div>
-                <div className="mt-2">
-                    <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500"
-                            style={{ width: `${(answeredCount / questions.length) * 100}%` }}
-                        />
-                    </div>
-                </div>
-            </div>
-
             {/* ==================== MAIN CONTENT ==================== */}
-            <div className="w-full px-6 md:px-10 lg:px-16 py-8 flex flex-col lg:flex-row gap-8">
+            <div className="flex-1 flex overflow-hidden" style={{ height: 'calc(100% - 100px)' }}>
 
-                {/* ==================== LEFT: QUESTION AREA ==================== */}
-                <main className="flex-1">
+                {/* ==================== QUESTION AREA ==================== */}
+                <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
                     <AnimatePresence mode="wait">
                         {currentQuestion && (
                             <motion.div
@@ -345,198 +316,279 @@ export default function ExamPage() {
                                 exit={{ opacity: 0, y: -10 }}
                                 transition={{ duration: 0.2 }}
                             >
-                                {/* Question Card */}
-                                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                                    {/* Question Header */}
-                                    <div className="px-8 py-5 border-b border-slate-100 flex items-center justify-between">
-                                        <h2 className="text-xl font-semibold text-slate-800">
-                                            Soal Nomor {currentQuestionIndex + 1}
-                                        </h2>
-                                        <span className={`px-4 py-1.5 text-xs font-semibold rounded-full uppercase tracking-wide ${currentQuestion.tipe === 'COMPLEX'
-                                            ? 'bg-amber-100 text-amber-700 border border-amber-200'
-                                            : 'bg-blue-100 text-blue-700 border border-blue-200'
-                                            }`}>
-                                            {currentQuestion.tipe === 'COMPLEX' ? 'Pilihan Ganda Kompleks' : 'Pilihan Ganda'}
-                                        </span>
+                                {/* Question Header with Gradient */}
+                                <div
+                                    className="text-white px-6 py-4 flex justify-between items-center"
+                                    style={{
+                                        background: 'linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%)',
+                                        borderRadius: '12px 12px 0 0'
+                                    }}
+                                >
+                                    <div>
+                                        <div className="text-xs opacity-90 mb-1">Soal Nomor</div>
+                                        <div className="text-2xl font-bold">{currentQuestionIndex + 1}</div>
                                     </div>
-
-                                    {/* Question Content */}
-                                    <div className="p-8">
-                                        {/* Question Image */}
-                                        {currentQuestion.gambar_url && (
-                                            <div className="mb-6 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
-                                                <Image
-                                                    src={currentQuestion.gambar_url}
-                                                    alt="Gambar soal"
-                                                    width={800}
-                                                    height={400}
-                                                    className="w-full h-auto object-contain max-h-64"
-                                                />
-                                            </div>
-                                        )}
-
-                                        {/* Question Text */}
-                                        <p className="text-lg leading-relaxed text-slate-700 mb-8">
-                                            {currentQuestion.pertanyaan}
-                                        </p>
-
-                                        {/* Answer Options - Radio Style */}
-                                        <div className="space-y-5">
-                                            {['A', 'B', 'C', 'D', 'E'].map((option) => {
-                                                const optionKey = `opsi_${option.toLowerCase()}` as keyof Question;
-                                                const optionText = currentQuestion[optionKey] as string;
-
-                                                if (!optionText) return null;
-
-                                                const isSelected = currentQuestion.tipe === 'COMPLEX'
-                                                    ? ((answers[currentQuestion.id_soal] as string[]) || []).includes(option)
-                                                    : answers[currentQuestion.id_soal] === option;
-
-                                                return (
-                                                    <button
-                                                        key={option}
-                                                        onClick={() => handleAnswerSelect(currentQuestion.id_soal, option, currentQuestion.tipe === 'COMPLEX')}
-                                                        className={`w-full text-left px-5 py-4 rounded-xl border-2 transition-all duration-200 flex items-center gap-4 ${isSelected
-                                                            ? 'border-blue-500 bg-blue-50'
-                                                            : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                                                            }`}
-                                                    >
-                                                        {/* Radio Circle */}
-                                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSelected
-                                                            ? 'border-blue-500 bg-blue-500'
-                                                            : 'border-slate-300'
-                                                            }`}>
-                                                            {isSelected && (
-                                                                <div className="w-2 h-2 bg-white rounded-full" />
-                                                            )}
-                                                        </div>
-                                                        <span className={`text-base ${isSelected ? 'text-blue-800 font-medium' : 'text-slate-600'}`}>
-                                                            {optionText}
-                                                        </span>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-
-                                        {currentQuestion.tipe === 'COMPLEX' && (
-                                            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                                                <p className="text-sm text-amber-700 flex items-center gap-2">
-                                                    <AlertTriangle className="w-4 h-4" />
-                                                    Pilih semua jawaban yang benar untuk soal ini
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
+                                    <button
+                                        onClick={() => toggleFlag(currentQuestion.id_soal)}
+                                        className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all"
+                                        style={{
+                                            background: flaggedQuestions.has(currentQuestion.id_soal)
+                                                ? '#f59e0b'
+                                                : 'rgba(255,255,255,0.2)',
+                                            border: '2px solid white',
+                                            color: 'white'
+                                        }}
+                                    >
+                                        <Flag className="w-4 h-4" />
+                                        Ragu-ragu
+                                    </button>
                                 </div>
 
-                                {/* Navigation Buttons - Updated Style */}
-                                <div className="hidden md:flex items-center justify-between mt-10 gap-6">
-                                    <Button
-                                        variant="outline"
-                                        size="lg"
+                                {/* Question Content */}
+                                <div
+                                    className="bg-white p-8 mb-6"
+                                    style={{
+                                        borderRadius: '0 0 12px 12px',
+                                        boxShadow: '0 4px 6px rgba(0,0,0,0.05)'
+                                    }}
+                                >
+                                    {/* Question Image */}
+                                    {currentQuestion.gambar_url && (
+                                        <div className="mb-6 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
+                                            <Image
+                                                src={currentQuestion.gambar_url}
+                                                alt="Gambar soal"
+                                                width={800}
+                                                height={400}
+                                                className="w-full h-auto object-contain max-h-64"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* Question Text */}
+                                    <p
+                                        className="mb-8"
+                                        style={{
+                                            color: '#1e293b',
+                                            fontSize: '18px',
+                                            lineHeight: '1.8'
+                                        }}
+                                    >
+                                        {currentQuestion.pertanyaan}
+                                    </p>
+
+                                    {/* Answer Options - EXACT STYLE FROM exampage.html */}
+                                    <div className="flex flex-col gap-3">
+                                        {['A', 'B', 'C', 'D', 'E'].map((option) => {
+                                            const optionKey = `opsi_${option.toLowerCase()}` as keyof Question;
+                                            const optionText = currentQuestion[optionKey] as string;
+
+                                            if (!optionText) return null;
+
+                                            const isSelected = currentQuestion.tipe === 'COMPLEX'
+                                                ? ((answers[currentQuestion.id_soal] as string[]) || []).includes(option)
+                                                : answers[currentQuestion.id_soal] === option;
+
+                                            return (
+                                                <button
+                                                    key={option}
+                                                    onClick={() => handleAnswerSelect(currentQuestion.id_soal, option, currentQuestion.tipe === 'COMPLEX')}
+                                                    className="w-full text-left flex items-center gap-4 p-5 rounded-xl transition-all duration-200 hover:translate-x-1"
+                                                    style={{
+                                                        border: `3px solid ${isSelected ? '#2563eb' : '#e2e8f0'}`,
+                                                        backgroundColor: isSelected ? 'rgba(37, 99, 235, 0.08)' : 'white',
+                                                        boxShadow: isSelected
+                                                            ? '0 4px 12px rgba(37, 99, 235, 0.2)'
+                                                            : '0 2px 4px rgba(0,0,0,0.02)'
+                                                    }}
+                                                >
+                                                    {/* Circle Label */}
+                                                    <div
+                                                        className="flex-shrink-0 flex items-center justify-center font-bold text-lg"
+                                                        style={{
+                                                            width: '40px',
+                                                            height: '40px',
+                                                            borderRadius: '50%',
+                                                            border: `3px solid ${isSelected ? '#2563eb' : '#cbd5e1'}`,
+                                                            backgroundColor: isSelected ? '#2563eb' : 'white',
+                                                            color: isSelected ? 'white' : '#1e293b',
+                                                            boxShadow: isSelected ? '0 2px 8px rgba(37, 99, 235, 0.3)' : 'none'
+                                                        }}
+                                                    >
+                                                        {option}
+                                                    </div>
+                                                    <span
+                                                        className="flex-1"
+                                                        style={{
+                                                            color: '#1e293b',
+                                                            fontSize: '16px',
+                                                            lineHeight: '1.6'
+                                                        }}
+                                                    >
+                                                        {optionText}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {currentQuestion.tipe === 'COMPLEX' && (
+                                        <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                                            <p className="text-sm text-amber-700 flex items-center gap-2">
+                                                <AlertTriangle className="w-4 h-4" />
+                                                Pilih semua jawaban yang benar untuk soal ini
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Navigation Buttons - EXACT STYLE */}
+                                <div className="flex gap-4 justify-center">
+                                    <button
                                         onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
                                         disabled={currentQuestionIndex === 0}
-                                        className="px-8 py-3 text-base border-blue-500 text-blue-600 hover:bg-blue-50"
+                                        className="flex items-center gap-2 px-10 py-3.5 rounded-xl font-semibold transition-all hover:-translate-y-0.5 disabled:opacity-50"
+                                        style={{
+                                            backgroundColor: 'white',
+                                            color: '#1e293b',
+                                            border: '2px solid #cbd5e1',
+                                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                                            fontSize: '16px'
+                                        }}
                                     >
-                                        <ChevronLeft className="w-5 h-5 mr-2" />
+                                        <ChevronLeft className="w-5 h-5" />
                                         Sebelumnya
-                                    </Button>
-
-                                    <Button
-                                        size="lg"
-                                        onClick={() => currentQuestion && toggleFlag(currentQuestion.id_soal)}
-                                        className={`px-10 py-3 text-base ${flaggedQuestions.has(currentQuestion?.id_soal || '')
-                                            ? 'bg-amber-400 hover:bg-amber-500 text-amber-900'
-                                            : 'bg-amber-400 hover:bg-amber-500 text-amber-900'
-                                            }`}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            if (currentQuestionIndex < questions.length - 1) {
+                                                setCurrentQuestionIndex(currentQuestionIndex + 1);
+                                            }
+                                        }}
+                                        disabled={currentQuestionIndex >= questions.length - 1}
+                                        className="flex items-center gap-2 px-12 py-3.5 rounded-xl font-semibold text-white transition-all hover:-translate-y-0.5 disabled:opacity-50"
+                                        style={{
+                                            backgroundColor: '#2563eb',
+                                            boxShadow: '0 4px 6px rgba(37, 99, 235, 0.3)',
+                                            fontSize: '16px'
+                                        }}
                                     >
-                                        <Flag className="w-5 h-5 mr-2" />
-                                        Ragu-ragu
-                                    </Button>
-
-                                    {currentQuestionIndex < questions.length - 1 ? (
-                                        <Button
-                                            size="lg"
-                                            onClick={() => setCurrentQuestionIndex(currentQuestionIndex + 1)}
-                                            className="px-8 py-3 text-base bg-blue-600 hover:bg-blue-700 text-white"
-                                        >
-                                            Berikutnya
-                                            <ChevronRight className="w-5 h-5 ml-2" />
-                                        </Button>
-                                    ) : (
-                                        <Button
-                                            size="lg"
-                                            onClick={() => setShowSubmitConfirm(true)}
-                                            className="px-8 py-3 text-base bg-emerald-600 hover:bg-emerald-700"
-                                        >
-                                            <Send className="w-5 h-5 mr-2" />
-                                            Selesai
-                                        </Button>
-                                    )}
+                                        Selanjutnya
+                                        <ChevronRight className="w-5 h-5" />
+                                    </button>
                                 </div>
                             </motion.div>
                         )}
                     </AnimatePresence>
                 </main>
 
-                {/* ==================== RIGHT: SIDEBAR - Desktop Only ==================== */}
-                <aside className="hidden lg:block w-[320px] flex-shrink-0">
-                    <div className="sticky top-32">
-                        {/* Question Grid Card */}
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                            <h3 className="text-base font-semibold text-slate-700 mb-5">Daftar Soal</h3>
+                {/* ==================== SIDEBAR - EXACT STYLE FROM exampage.html ==================== */}
+                <aside
+                    className="hidden lg:block w-80 p-6 overflow-y-auto flex-shrink-0"
+                    style={{
+                        backgroundColor: 'white',
+                        borderLeft: '1px solid #e2e8f0',
+                        boxShadow: '-2px 0 8px rgba(0,0,0,0.05)'
+                    }}
+                >
+                    {/* Title */}
+                    <h3
+                        className="flex items-center gap-2 mb-4 font-bold"
+                        style={{ color: '#1e293b', fontSize: '18px' }}
+                    >
+                        <List className="w-5 h-5" />
+                        Daftar Soal
+                    </h3>
 
-                            {/* Question Number Grid - 5 columns */}
-                            <div className="grid grid-cols-5 gap-3">
-                                {questions.map((q, index) => {
-                                    const isAnswered = answers[q.id_soal] !== undefined;
-                                    const isCurrent = index === currentQuestionIndex;
-                                    const isFlagged = flaggedQuestions.has(q.id_soal);
+                    {/* Legend */}
+                    <div
+                        className="p-3 rounded-lg mb-4 text-xs"
+                        style={{ backgroundColor: '#f1f5f9' }}
+                    >
+                        <div className="flex items-center gap-2 mb-1.5">
+                            <div className="w-6 h-6 rounded" style={{ backgroundColor: '#2563eb' }} />
+                            <span style={{ color: '#1e293b' }}>Sedang dikerjakan</span>
+                        </div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                            <div className="w-6 h-6 rounded" style={{ backgroundColor: '#10b981' }} />
+                            <span style={{ color: '#1e293b' }}>Sudah dijawab</span>
+                        </div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                            <div className="w-6 h-6 rounded" style={{ backgroundColor: '#f59e0b' }} />
+                            <span style={{ color: '#1e293b' }}>Ragu-ragu</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded" style={{ backgroundColor: '#e5e7eb' }} />
+                            <span style={{ color: '#1e293b' }}>Belum dijawab</span>
+                        </div>
+                    </div>
 
-                                    return (
-                                        <button
-                                            key={q.id_soal}
-                                            onClick={() => setCurrentQuestionIndex(index)}
-                                            className={`
-                                                w-11 h-11 rounded-lg font-semibold text-sm flex items-center justify-center 
-                                                transition-all duration-200 cursor-pointer border-2
-                                                ${isFlagged
-                                                    ? 'bg-amber-400 text-amber-900 border-amber-500 hover:bg-amber-500'
-                                                    : isAnswered
-                                                        ? 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600'
-                                                        : 'bg-white text-slate-500 border-slate-300 hover:bg-slate-50'
-                                                }
-                                                ${isCurrent ? 'ring-2 ring-offset-1 ring-blue-400' : ''}
-                                            `}
-                                        >
-                                            {index + 1}
-                                        </button>
-                                    );
-                                })}
-                            </div>
+                    {/* Question Grid */}
+                    <div className="grid grid-cols-5 gap-2 mb-6">
+                        {questions.map((q, index) => {
+                            const isAnswered = answers[q.id_soal] !== undefined;
+                            const isCurrent = index === currentQuestionIndex;
+                            const isFlagged = flaggedQuestions.has(q.id_soal);
 
-                            {/* Legend */}
-                            <div className="mt-8 pt-6 border-t border-slate-200 space-y-4">
-                                <div className="flex items-center gap-3 text-sm">
-                                    <div className="w-5 h-5 rounded bg-blue-500" />
-                                    <span className="text-slate-600">Terjawab</span>
-                                </div>
-                                <div className="flex items-center gap-3 text-sm">
-                                    <div className="w-5 h-5 rounded bg-amber-400" />
-                                    <span className="text-slate-600">Ragu-ragu</span>
-                                </div>
-                                <div className="flex items-center gap-3 text-sm">
-                                    <div className="w-5 h-5 rounded border-2 border-slate-300 bg-white" />
-                                    <span className="text-slate-600">Belum Dijawab</span>
-                                </div>
-                            </div>
+                            let bgColor = '#e5e7eb'; // belum dijawab
+                            if (isCurrent) bgColor = '#2563eb'; // sedang dikerjakan
+                            else if (isFlagged) bgColor = '#f59e0b'; // ragu-ragu
+                            else if (isAnswered) bgColor = '#10b981'; // sudah dijawab
+
+                            return (
+                                <button
+                                    key={q.id_soal}
+                                    onClick={() => setCurrentQuestionIndex(index)}
+                                    className="text-white font-bold text-sm rounded-md transition-all hover:scale-105"
+                                    style={{
+                                        backgroundColor: bgColor,
+                                        padding: '12px',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                    }}
+                                >
+                                    {index + 1}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Submit Button */}
+                    <button
+                        onClick={() => setShowSubmitConfirm(true)}
+                        className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-white transition-all hover:-translate-y-0.5"
+                        style={{
+                            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                            boxShadow: '0 4px 6px rgba(16, 185, 129, 0.3)',
+                            fontSize: '16px'
+                        }}
+                    >
+                        <CheckCircle2 className="w-5 h-5" />
+                        Selesai & Kumpulkan
+                    </button>
+
+                    {/* Stats Footer */}
+                    <div
+                        className="mt-4 p-3 rounded-lg text-xs"
+                        style={{ backgroundColor: '#f1f5f9', color: '#1e293b' }}
+                    >
+                        <div className="flex justify-between mb-1">
+                            <span>Dijawab:</span>
+                            <strong>{answeredCount} soal</strong>
+                        </div>
+                        <div className="flex justify-between mb-1">
+                            <span>Belum dijawab:</span>
+                            <strong>{unansweredCount} soal</strong>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Ragu-ragu:</span>
+                            <strong>{flaggedQuestions.size} soal</strong>
                         </div>
                     </div>
                 </aside>
             </div>
 
             {/* ==================== MOBILE: STICKY BOTTOM NAVIGATION ==================== */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-3 z-30 shadow-lg">
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-3 z-30 shadow-lg">
                 <div className="flex items-center justify-between gap-2 max-w-lg mx-auto">
                     <Button
                         variant="outline"
@@ -551,11 +603,10 @@ export default function ExamPage() {
 
                     <Button
                         size="sm"
-                        onClick={() => currentQuestion && toggleFlag(currentQuestion.id_soal)}
-                        className="flex-1 bg-amber-400 hover:bg-amber-500 text-amber-900"
+                        onClick={() => setShowMobileDrawer(true)}
+                        className="bg-slate-600 hover:bg-slate-700"
                     >
-                        <Flag className="w-4 h-4 mr-1" />
-                        Ragu-ragu
+                        <List className="w-4 h-4" />
                     </Button>
 
                     {currentQuestionIndex < questions.length - 1 ? (
@@ -584,29 +635,25 @@ export default function ExamPage() {
             <AnimatePresence>
                 {showMobileDrawer && (
                     <>
-                        {/* Backdrop */}
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setShowMobileDrawer(false)}
-                            className="fixed inset-0 bg-black/50 z-50 md:hidden"
+                            className="fixed inset-0 bg-black/50 z-50 lg:hidden"
                         />
 
-                        {/* Drawer */}
                         <motion.div
                             initial={{ y: '100%' }}
                             animate={{ y: 0 }}
                             exit={{ y: '100%' }}
                             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-50 md:hidden max-h-[80vh] overflow-y-auto"
+                            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-50 lg:hidden max-h-[80vh] overflow-y-auto"
                         >
-                            {/* Drawer Handle */}
                             <div className="flex justify-center pt-3 pb-2">
                                 <div className="w-10 h-1 bg-slate-300 rounded-full" />
                             </div>
 
-                            {/* Drawer Header */}
                             <div className="flex items-center justify-between px-5 pb-4 border-b border-slate-100">
                                 <h2 className="text-lg font-semibold text-slate-800">Daftar Soal</h2>
                                 <button
@@ -617,14 +664,17 @@ export default function ExamPage() {
                                 </button>
                             </div>
 
-                            {/* Drawer Content */}
                             <div className="p-5 pb-24">
-                                {/* Question Grid */}
-                                <div className="grid grid-cols-5 gap-2">
+                                <div className="grid grid-cols-5 gap-2 mb-6">
                                     {questions.map((q, index) => {
                                         const isAnswered = answers[q.id_soal] !== undefined;
                                         const isCurrent = index === currentQuestionIndex;
                                         const isFlagged = flaggedQuestions.has(q.id_soal);
+
+                                        let bgColor = '#e5e7eb';
+                                        if (isCurrent) bgColor = '#2563eb';
+                                        else if (isFlagged) bgColor = '#f59e0b';
+                                        else if (isAnswered) bgColor = '#10b981';
 
                                         return (
                                             <button
@@ -633,17 +683,8 @@ export default function ExamPage() {
                                                     setCurrentQuestionIndex(index);
                                                     setShowMobileDrawer(false);
                                                 }}
-                                                className={`
-                                                    w-10 h-10 rounded-lg font-semibold text-sm flex items-center justify-center 
-                                                    transition-all duration-200 cursor-pointer border-2
-                                                    ${isFlagged
-                                                        ? 'bg-amber-400 text-amber-900 border-amber-500'
-                                                        : isAnswered
-                                                            ? 'bg-blue-500 text-white border-blue-500'
-                                                            : 'bg-white text-slate-500 border-slate-300'
-                                                    }
-                                                    ${isCurrent ? 'ring-2 ring-offset-1 ring-blue-400' : ''}
-                                                `}
+                                                className="text-white font-bold text-sm rounded-md p-3"
+                                                style={{ backgroundColor: bgColor }}
                                             >
                                                 {index + 1}
                                             </button>
@@ -651,30 +692,13 @@ export default function ExamPage() {
                                     })}
                                 </div>
 
-                                {/* Legend */}
-                                <div className="mt-6 pt-4 border-t border-slate-200 space-y-2">
-                                    <div className="flex items-center gap-2 text-xs">
-                                        <div className="w-4 h-4 rounded bg-blue-500" />
-                                        <span className="text-slate-600">Terjawab</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs">
-                                        <div className="w-4 h-4 rounded bg-amber-400" />
-                                        <span className="text-slate-600">Ragu-ragu</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs">
-                                        <div className="w-4 h-4 rounded border-2 border-slate-300 bg-white" />
-                                        <span className="text-slate-600">Belum Dijawab</span>
-                                    </div>
-                                </div>
-
-                                {/* Submit Button */}
                                 <Button
                                     size="lg"
                                     onClick={() => {
                                         setShowMobileDrawer(false);
                                         setShowSubmitConfirm(true);
                                     }}
-                                    className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-semibold"
+                                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-semibold"
                                 >
                                     <Send className="w-5 h-5 mr-2" />
                                     Selesai Ujian
@@ -800,6 +824,18 @@ export default function ExamPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* CSS Animations */}
+            <style jsx global>{`
+                @keyframes warningSlide {
+                    0% { background-position: 0% 0%; }
+                    100% { background-position: 200% 0%; }
+                }
+                @keyframes pulse {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.6; }
+                }
+            `}</style>
         </div>
     );
 }

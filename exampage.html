@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="id" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ANBK Exam Browser</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    .exam-browser {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      user-select: none;
+    }
+    
+    .question-card {
+      transition: all 0.3s ease;
+    }
+    
+    .option-item {
+      transition: all 0.2s ease;
+    }
+    
+    .option-item:hover {
+      transform: translateX(4px);
+    }
+    
+    .timer-pulse {
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    
+    .warning-bar {
+      background: linear-gradient(90deg, #dc2626 0%, #ef4444 50%, #dc2626 100%);
+      background-size: 200% 100%;
+      animation: warningSlide 3s linear infinite;
+    }
+    
+    @keyframes warningSlide {
+      0% { background-position: 0% 0%; }
+      100% { background-position: 200% 0%; }
+    }
+
+    .question-nav-btn {
+      transition: all 0.2s ease;
+    }
+
+    .question-nav-btn:hover {
+      transform: scale(1.05);
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full">
+  <div id="app" class="exam-browser h-full w-full overflow-auto"></div>
+  <script>
+    const defaultConfig = {
+      exam_title: "Asesmen Nasional Berbasis Komputer (ANBK) 2024",
+      student_name: "AHMAD SYAHPUTRA",
+      time_remaining: "90:00",
+      question_number: "Soal 1",
+      question_text: "Bacalah teks berikut dengan cermat! Indonesia memiliki keanekaragaman hayati yang sangat tinggi. Hutan tropis Indonesia menjadi rumah bagi ribuan spesies flora dan fauna. Namun, deforestasi mengancam kelestarian ekosistem ini. Berdasarkan teks di atas, apa yang menjadi ancaman utama bagi keanekaragaman hayati Indonesia?",
+      submit_button: "Selesai & Kumpulkan",
+      background_color: "#f1f5f9",
+      header_color: "#1e3a8a",
+      warning_color: "#dc2626",
+      surface_color: "#ffffff",
+      text_color: "#1e293b",
+      primary_action_color: "#2563eb",
+      font_family: "Segoe UI",
+      font_size: 16
+    };
+
+    let config = { ...defaultConfig };
+    let selectedAnswer = null;
+    let questionsStatus = Array(40).fill(0); // 0: belum dijawab, 1: dijawab, 2: ragu
+    questionsStatus[0] = 2; // Soal 1 ditandai ragu-ragu
+    questionsStatus[1] = 1; // Soal 2 sudah dijawab
+
+    const answers = [
+      { id: 'a', text: 'Perubahan iklim global', label: 'A' },
+      { id: 'b', text: 'Deforestasi atau penggundulan hutan', label: 'B' },
+      { id: 'c', text: 'Polusi udara di perkotaan', label: 'C' },
+      { id: 'd', text: 'Pertumbuhan penduduk yang tinggi', label: 'D' }
+    ];
+
+    function render() {
+      const customFont = config.font_family || defaultConfig.font_family;
+      const baseFontStack = '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif';
+      const baseSize = config.font_size || defaultConfig.font_size;
+      
+      const backgroundColor = config.background_color || defaultConfig.background_color;
+      const headerColor = config.header_color || defaultConfig.header_color;
+      const warningColor = config.warning_color || defaultConfig.warning_color;
+      const surfaceColor = config.surface_color || defaultConfig.surface_color;
+      const textColor = config.text_color || defaultConfig.text_color;
+      const primaryColor = config.primary_action_color || defaultConfig.primary_action_color;
+
+      const app = document.getElementById('app');
+      app.style.backgroundColor = backgroundColor;
+      app.style.fontFamily = `${customFont}, ${baseFontStack}`;
+      
+      app.innerHTML = `
+        <!-- Warning Bar -->
+        <div class="warning-bar" style="background: ${warningColor}; color: white; padding: 8px 24px; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: ${baseSize * 0.875}px; font-weight: 600;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+          </svg>
+          <span>MODE UJIAN AKTIF - Jangan keluar dari halaman ini atau menutup browser</span>
+        </div>
+
+        <!-- Main Header -->
+        <header style="background-color: ${headerColor}; color: white; padding: 16px 32px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+              </svg>
+              <div>
+                <h1 id="exam-title" style="font-size: ${baseSize * 1.125}px; font-weight: 700; margin-bottom: 2px;">${config.exam_title || defaultConfig.exam_title}</h1>
+                <p id="student-name" style="font-size: ${baseSize * 0.875}px; opacity: 0.9;">Peserta: ${config.student_name || defaultConfig.student_name}</p>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 24px;">
+              <div style="text-align: right;">
+                <div style="font-size: ${baseSize * 0.75}px; opacity: 0.9; margin-bottom: 4px;">Sisa Waktu</div>
+                <div id="timer" class="timer-pulse" style="font-size: ${baseSize * 1.5}px; font-weight: 700; font-family: monospace;">${config.time_remaining || defaultConfig.time_remaining}</div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <!-- Main Content -->
+        <div style="display: flex; height: calc(100% - 140px);">
+          <!-- Question Area -->
+          <main style="flex: 1; padding: 24px 32px; overflow-y: auto;">
+            <!-- Question Header -->
+            <div style="background: linear-gradient(135deg, ${primaryColor} 0%, ${headerColor} 100%); color: white; padding: 16px 24px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: ${baseSize * 0.75}px; opacity: 0.9; margin-bottom: 4px;">Soal Nomor</div>
+                <div id="question-number" style="font-size: ${baseSize * 1.5}px; font-weight: 700;">1</div>
+              </div>
+              <button onclick="toggleDoubt()" id="doubt-btn" style="background: rgba(255,255,255,0.2); border: 2px solid white; color: white; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: ${baseSize * 0.875}px; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/>
+                </svg>
+                Ragu-ragu
+              </button>
+            </div>
+
+            <!-- Question Content -->
+            <div class="question-card" style="background-color: ${surfaceColor}; padding: 32px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 24px;">
+              <p id="question-text" style="color: ${textColor}; font-size: ${baseSize * 1.125}px; line-height: 1.8; margin-bottom: 32px;">${config.question_text || defaultConfig.question_text}</p>
+              
+              <div id="answers-container" style="display: flex; flex-direction: column; gap: 12px;"></div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div style="display: flex; gap: 16px; justify-content: center;">
+              <button onclick="handlePrevious()" style="background-color: ${surfaceColor}; color: ${textColor}; border: 2px solid #cbd5e1; padding: 14px 40px; border-radius: 10px; cursor: pointer; font-size: ${baseSize}px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                </svg>
+                Sebelumnya
+              </button>
+              <button onclick="handleNext()" style="background-color: ${primaryColor}; color: white; border: none; padding: 14px 48px; border-radius: 10px; cursor: pointer; font-size: ${baseSize}px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);">
+                Selanjutnya
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                </svg>
+              </button>
+            </div>
+          </main>
+
+          <!-- Sidebar Navigator -->
+          <aside style="width: 320px; background-color: ${surfaceColor}; border-left: 1px solid #e2e8f0; padding: 24px; overflow-y: auto; box-shadow: -2px 0 8px rgba(0,0,0,0.05);">
+            <h3 style="color: ${textColor}; font-size: ${baseSize * 1.125}px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/>
+              </svg>
+              Daftar Soal
+            </h3>
+            
+            <!-- Legend -->
+            <div style="background-color: ${backgroundColor}; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: ${baseSize * 0.75}px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <div style="width: 24px; height: 24px; background-color: ${primaryColor}; border-radius: 4px;"></div>
+                <span style="color: ${textColor};">Sedang dikerjakan</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <div style="width: 24px; height: 24px; background-color: #10b981; border-radius: 4px;"></div>
+                <span style="color: ${textColor};">Sudah dijawab</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <div style="width: 24px; height: 24px; background-color: #f59e0b; border-radius: 4px;"></div>
+                <span style="color: ${textColor};">Ragu-ragu</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="width: 24px; height: 24px; background-color: #e5e7eb; border-radius: 4px;"></div>
+                <span style="color: ${textColor};">Belum dijawab</span>
+              </div>
+            </div>
+
+            <!-- Question Grid -->
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 24px;">
+              ${questionsStatus.map((status, i) => {
+                let bgColor = '#e5e7eb'; // belum dijawab
+                if (i === 0) bgColor = primaryColor; // sedang dikerjakan
+                else if (status === 1) bgColor = '#10b981'; // sudah dijawab
+                else if (status === 2) bgColor = '#f59e0b'; // ragu-ragu
+                
+                return `
+                  <button class="question-nav-btn" onclick="handleQuestionSelect(${i + 1})" style="background-color: ${bgColor}; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-size: ${baseSize * 0.875}px; font-weight: 700; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    ${i + 1}
+                  </button>
+                `;
+              }).join('')}
+            </div>
+
+            <!-- Submit Button -->
+            <button id="submit-btn" onclick="handleSubmit()" style="width: 100%; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 16px; border-radius: 10px; cursor: pointer; font-size: ${baseSize}px; font-weight: 700; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3); transition: all 0.2s;">
+              <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/>
+                </svg>
+                <span>${config.submit_button || defaultConfig.submit_button}</span>
+              </div>
+            </button>
+
+            <!-- Info Footer -->
+            <div style="margin-top: 16px; padding: 12px; background-color: ${backgroundColor}; border-radius: 8px; font-size: ${baseSize * 0.75}px; color: ${textColor};">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span>Dijawab:</span>
+                <strong>2 soal</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span>Belum dijawab:</span>
+                <strong>37 soal</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span>Ragu-ragu:</span>
+                <strong>1 soal</strong>
+              </div>
+            </div>
+          </aside>
+        </div>
+      `;
+
+      renderAnswers();
+      attachButtonEffects();
+    }
+
+    function renderAnswers() {
+      const container = document.getElementById('answers-container');
+      const surfaceColor = config.surface_color || defaultConfig.surface_color;
+      const textColor = config.text_color || defaultConfig.text_color;
+      const primaryColor = config.primary_action_color || defaultConfig.primary_action_color;
+      const baseSize = config.font_size || defaultConfig.font_size;
+      
+      container.innerHTML = answers.map(answer => {
+        const isSelected = selectedAnswer === answer.id;
+        return `
+          <div class="option-item" onclick="selectAnswer('${answer.id}')" style="display: flex; align-items: center; gap: 16px; padding: 20px; border: 3px solid ${isSelected ? primaryColor : '#e2e8f0'}; border-radius: 12px; cursor: pointer; background-color: ${isSelected ? primaryColor + '15' : surfaceColor}; box-shadow: ${isSelected ? '0 4px 12px rgba(37, 99, 235, 0.2)' : '0 2px 4px rgba(0,0,0,0.02)'};">
+            <div style="width: 40px; height: 40px; border-radius: 50%; border: 3px solid ${isSelected ? primaryColor : '#cbd5e1'}; display: flex; align-items: center; justify-content: center; background-color: ${isSelected ? primaryColor : 'white'}; color: ${isSelected ? 'white' : textColor}; font-weight: 700; font-size: ${baseSize * 1.125}px; flex-shrink: 0; box-shadow: ${isSelected ? '0 2px 8px rgba(37, 99, 235, 0.3)' : 'none'};">
+              ${answer.label}
+            </div>
+            <span style="color: ${textColor}; font-size: ${baseSize}px; flex: 1; line-height: 1.6;">${answer.text}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function attachButtonEffects() {
+      const buttons = document.querySelectorAll('button');
+      buttons.forEach(btn => {
+        btn.addEventListener('mouseenter', function() {
+          this.style.transform = 'translateY(-2px)';
+          this.style.filter = 'brightness(1.05)';
+        });
+        btn.addEventListener('mouseleave', function() {
+          this.style.transform = 'translateY(0)';
+          this.style.filter = 'brightness(1)';
+        });
+      });
+    }
+
+    function selectAnswer(id) {
+      selectedAnswer = id;
+      renderAnswers();
+    }
+
+    function toggleDoubt() {
+      console.log('Toggle ragu-ragu');
+    }
+
+    function handlePrevious() {
+      console.log('Soal sebelumnya');
+    }
+
+    function handleNext() {
+      console.log('Soal selanjutnya');
+    }
+
+    function handleSubmit() {
+      console.log('Submit ujian');
+    }
+
+    function handleQuestionSelect(num) {
+      console.log('Navigasi ke soal', num);
+    }
+
+    async function onConfigChange(newConfig) {
+      Object.assign(config, newConfig);
+      render();
+    }
+
+    const element = {
+      defaultConfig,
+      onConfigChange,
+      mapToCapabilities: (cfg) => ({
+        recolorables: [
+          {
+            get: () => cfg.background_color || defaultConfig.background_color,
+            set: (value) => {
+              cfg.background_color = value;
+              window.elementSdk.setConfig({ background_color: value });
+            }
+          },
+          {
+            get: () => cfg.header_color || defaultConfig.header_color,
+            set: (value) => {
+              cfg.header_color = value;
+              window.elementSdk.setConfig({ header_color: value });
+            }
+          },
+          {
+            get: () => cfg.surface_color || defaultConfig.surface_color,
+            set: (value) => {
+              cfg.surface_color = value;
+              window.elementSdk.setConfig({ surface_color: value });
+            }
+          },
+          {
+            get: () => cfg.text_color || defaultConfig.text_color,
+            set: (value) => {
+              cfg.text_color = value;
+              window.elementSdk.setConfig({ text_color: value });
+            }
+          },
+          {
+            get: () => cfg.primary_action_color || defaultConfig.primary_action_color,
+            set: (value) => {
+              cfg.primary_action_color = value;
+              window.elementSdk.setConfig({ primary_action_color: value });
+            }
+          }
+        ],
+        borderables: [],
+        fontEditable: {
+          get: () => cfg.font_family || defaultConfig.font_family,
+          set: (value) => {
+            cfg.font_family = value;
+            window.elementSdk.setConfig({ font_family: value });
+          }
+        },
+        fontSizeable: {
+          get: () => cfg.font_size || defaultConfig.font_size,
+          set: (value) => {
+            cfg.font_size = value;
+            window.elementSdk.setConfig({ font_size: value });
+          }
+        }
+      }),
+      mapToEditPanelValues: (cfg) => new Map([
+        ['exam_title', cfg.exam_title || defaultConfig.exam_title],
+        ['student_name', cfg.student_name || defaultConfig.student_name],
+        ['time_remaining', cfg.time_remaining || defaultConfig.time_remaining],
+        ['question_number', cfg.question_number || defaultConfig.question_number],
+        ['question_text', cfg.question_text || defaultConfig.question_text],
+        ['submit_button', cfg.submit_button || defaultConfig.submit_button]
+      ])
+    };
+
+    if (window.elementSdk) {
+      window.elementSdk.init(element);
+      if (window.elementSdk.config) {
+        config = { ...defaultConfig, ...window.elementSdk.config };
+      }
+    }
+
+    render();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b0830e4f45f0ddc',t:'MTc2NjE2MDg0NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
