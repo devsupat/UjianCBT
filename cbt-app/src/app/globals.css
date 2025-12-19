@@ -237,6 +237,35 @@ body {
   .question-nav-item {
     @apply w-8 h-8 text-xs;
   }
+
+  /* Add padding for mobile sticky bottom nav */
+  .exam-content-mobile {
+    padding-bottom: 80px;
+  }
+}
+
+/* ============================================
+   CBT EXAM PAGE - ENHANCED STYLES
+   ============================================ */
+
+/* Question option card hover effect */
+.option-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.option-card:hover {
+  transform: translateX(4px);
+}
+
+/* Mobile drawer safe area */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .mobile-bottom-nav {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+
+  .mobile-drawer {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 /* ============================================
