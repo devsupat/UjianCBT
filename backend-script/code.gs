@@ -93,6 +93,9 @@ function doGet(e) {
       case "exportResults":
         result = handleExportResults();
         break;
+      case "getExamPinStatus":
+        result = handleGetExamPinStatus();
+        break;
       default:
         result = { success: false, message: "Unknown action" };
     }
@@ -142,6 +145,12 @@ function doPost(e) {
         break;
       case "resetUserLogin":
         result = handleResetUserLogin(params);
+        break;
+      case "validateExamPin":
+        result = handleValidateExamPin(params);
+        break;
+      case "setExamPin":
+        result = handleSetExamPin(params);
         break;
       default:
         result = { success: false, message: "Unknown action" };
@@ -614,4 +623,63 @@ function handleResetUserLogin(params) {
   }
   
   return { success: false, message: "User not found" };
+}
+
+// ===== PIN AUTHENTICATION HANDLERS =====
+
+function handleGetExamPinStatus() {
+  const config = getConfig();
+  const examPin = config.exam_pin || "";
+  
+  // Return true if PIN is required (not empty)
+  return { 
+    success: true, 
+    isPinRequired: examPin.trim() !== "" 
+  };
+}
+
+function handleValidateExamPin(params) {
+  const { pin } = params;
+  const config = getConfig();
+  const examPin = config.exam_pin || "";
+  
+  // If no PIN set, validation always succeeds (backward compatible)
+  if (examPin.trim() === "") {
+    return { success: true, message: "No PIN required" };
+  }
+  
+  // Validate PIN
+  if (pin && pin.toString().trim() === examPin.trim()) {
+    return { success: true, message: "PIN valid" };
+  }
+  
+  return { success: false, message: "PIN salah" };
+}
+
+function handleSetExamPin(params) {
+  const { pin, adminPassword } = params;
+  
+  // Verify admin password
+  const config = getConfig();
+  if (adminPassword !== config.admin_password) {
+    return { success: false, message: "Unauthorized" };
+  }
+  
+  // Update PIN in Config sheet
+  const sheet = getSheet("Config");
+  const data = sheet.getDataRange().getValues();
+  
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] === "exam_pin") {
+      sheet.getRange(i + 1, 2).setValue(pin || "");
+      cache.remove("config");
+      return { success: true, message: "PIN updated" };
+    }
+  }
+  
+  // If exam_pin doesn't exist, add it
+  sheet.appendRow(["exam_pin", pin || "", "PIN for exam start"]);
+  cache.remove("config");
+  
+  return { success: true, message: "PIN set" };
 }

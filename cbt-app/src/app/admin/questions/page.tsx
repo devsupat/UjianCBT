@@ -161,7 +161,7 @@ export default function QuestionsManagement() {
     };
 
     const headerActions = (
-        <Button 
+        <Button
             onClick={() => handleOpenModal()}
             className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/30 border-0"
         >
@@ -199,8 +199,8 @@ export default function QuestionsManagement() {
                             </div>
                             <p className="text-lg font-medium text-slate-600 mb-2">Belum ada soal</p>
                             <p className="text-sm text-slate-400 mb-6">Mulai dengan menambahkan soal pertama</p>
-                            <Button 
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/30" 
+                            <Button
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/30"
                                 onClick={() => handleOpenModal()}
                             >
                                 <Plus className="w-4 h-4 mr-2" />
@@ -286,9 +286,9 @@ export default function QuestionsManagement() {
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-white border-0 rounded-2xl w-full max-w-3xl mx-4 shadow-2xl ring-1 ring-slate-200/50"
+                            className="bg-white border-0 rounded-2xl w-full max-w-2xl mx-4 shadow-2xl ring-1 ring-slate-200/50"
                         >
-                            <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100 bg-gradient-to-r from-emerald-50/50 to-white">
+                            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-emerald-50/50 to-white">
                                 <div>
                                     <h2 className="text-2xl font-bold text-slate-800">
                                         {editingQuestion ? 'Edit Soal' : 'Tambah Soal Baru'}
@@ -302,119 +302,171 @@ export default function QuestionsManagement() {
                                 </Button>
                             </div>
 
-                            <form onSubmit={handleSubmit} className="p-8 space-y-6">
-                                <div className="grid grid-cols-3 gap-6">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-slate-700 block">ID Soal</label>
-                                        <Input
-                                            value={formData.id_soal}
-                                            onChange={(e) => setFormData({ ...formData, id_soal: e.target.value })}
-                                            disabled={!!editingQuestion}
-                                            className="h-11 bg-slate-50 border-slate-200 focus:bg-white"
-                                        />
+                            <form onSubmit={handleSubmit} className="px-6 py-6 space-y-0">
+                                {/* === SECTION 1: Informasi Soal === */}
+                                <div className="pb-5">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <div className="w-1 h-4 bg-emerald-500 rounded-full"></div>
+                                        <h3 className="text-sm font-semibold text-slate-700">Informasi Soal</h3>
                                     </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-slate-700 block">Nomor Urut</label>
-                                        <Input
-                                            type="number"
-                                            value={formData.nomor_urut}
-                                            onChange={(e) => setFormData({ ...formData, nomor_urut: parseInt(e.target.value) || 1 })}
-                                            className="h-11 bg-slate-50 border-slate-200 focus:bg-white"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-slate-700 block">Tipe</label>
-                                        <select
-                                            className="w-full h-11 rounded-xl border-2 border-slate-200 bg-slate-50 px-4 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:bg-white outline-none transition-all"
-                                            value={formData.tipe}
-                                            onChange={(e) => setFormData({ ...formData, tipe: e.target.value as 'SINGLE' | 'COMPLEX', kunci_jawaban: '' })}
-                                        >
-                                            <option value="SINGLE">Pilihan Ganda</option>
-                                            <option value="COMPLEX">Pilihan Ganda Kompleks</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-slate-700 block">Pertanyaan</label>
-                                    <textarea
-                                        className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 px-4 py-3 text-sm min-h-[120px] focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:bg-white outline-none transition-all resize-y"
-                                        value={formData.pertanyaan}
-                                        onChange={(e) => setFormData({ ...formData, pertanyaan: e.target.value })}
-                                        placeholder="Tuliskan pertanyaan..."
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-slate-700 block">URL Gambar <span className="text-slate-400 font-normal">(opsional)</span></label>
-                                    <Input
-                                        value={formData.gambar_url}
-                                        onChange={(e) => setFormData({ ...formData, gambar_url: e.target.value })}
-                                        placeholder="https://drive.google.com/file/d/..."
-                                        className="h-11 bg-slate-50 border-slate-200 focus:bg-white"
-                                    />
-                                </div>
-
-                                <div className="space-y-4 p-6 bg-slate-50 rounded-xl border border-slate-200">
-                                    <label className="text-sm font-semibold text-slate-700 block">Opsi Jawaban & Kunci</label>
-                                    {['A', 'B', 'C', 'D', 'E'].map((opt) => {
-                                        const key = `opsi_${opt.toLowerCase()}` as keyof typeof formData;
-                                        const isKey = formData.tipe === 'COMPLEX'
-                                            ? formData.kunci_jawaban.split(',').includes(opt)
-                                            : formData.kunci_jawaban === opt;
-
-                                        return (
-                                            <div key={opt} className="flex items-center gap-4">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleKeySelection(opt)}
-                                                    className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg transition-all shadow-sm ${isKey
-                                                        ? 'bg-emerald-500 text-white shadow-emerald-500/30 ring-2 ring-emerald-200'
-                                                        : 'bg-white text-slate-500 hover:bg-slate-100 border-2 border-slate-200'
-                                                        }`}
-                                                >
-                                                    {opt}
-                                                </button>
-                                                <Input
-                                                    value={formData[key] as string}
-                                                    onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
-                                                    placeholder={`Opsi ${opt}${opt === 'E' ? ' (opsional)' : ''}`}
-                                                    className="flex-1 h-11 bg-white border-slate-200 focus:bg-white"
-                                                />
-                                            </div>
-                                        );
-                                    })}
-                                    <p className="text-xs text-slate-500 mt-4 pt-4 border-t border-slate-200">
-                                        💡 Klik huruf untuk memilih kunci jawaban. {formData.tipe === 'COMPLEX' && 'Bisa pilih lebih dari satu.'}
-                                    </p>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-slate-700 block">Bobot</label>
-                                        <Input
-                                            type="number"
-                                            value={formData.bobot}
-                                            onChange={(e) => setFormData({ ...formData, bobot: parseInt(e.target.value) || 1 })}
-                                            className="h-11 bg-slate-50 border-slate-200 focus:bg-white"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-semibold text-slate-700 block">Kategori <span className="text-slate-400 font-normal">(opsional)</span></label>
-                                        <Input
-                                            value={formData.kategori}
-                                            onChange={(e) => setFormData({ ...formData, kategori: e.target.value })}
-                                            placeholder="Contoh: Matematika"
-                                            className="h-11 bg-slate-50 border-slate-200 focus:bg-white"
-                                        />
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-medium text-slate-500 block">ID Soal</label>
+                                            <Input
+                                                value={formData.id_soal}
+                                                onChange={(e) => setFormData({ ...formData, id_soal: e.target.value })}
+                                                disabled={!!editingQuestion}
+                                                className="h-11 bg-slate-50 border-slate-200 focus:bg-white"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-medium text-slate-500 block">Nomor Urut</label>
+                                            <Input
+                                                type="number"
+                                                value={formData.nomor_urut}
+                                                onChange={(e) => setFormData({ ...formData, nomor_urut: parseInt(e.target.value) || 1 })}
+                                                className="h-11 bg-slate-50 border-slate-200 focus:bg-white"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-medium text-slate-500 block">Tipe</label>
+                                            <select
+                                                className="w-full h-11 rounded-xl border-2 border-slate-200 bg-slate-50 px-4 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:bg-white outline-none transition-all"
+                                                value={formData.tipe}
+                                                onChange={(e) => setFormData({ ...formData, tipe: e.target.value as 'SINGLE' | 'COMPLEX', kunci_jawaban: '' })}
+                                            >
+                                                <option value="SINGLE">Pilihan Ganda</option>
+                                                <option value="COMPLEX">Pilihan Ganda Kompleks</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="flex gap-4 pt-6 border-t border-slate-200">
-                                    <Button type="button" variant="outline" className="flex-1 h-12" onClick={handleCloseModal}>
+                                {/* === SECTION 2: Isi Pertanyaan === */}
+                                <div className="py-5 border-t border-slate-100">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <div className="w-1 h-4 bg-blue-500 rounded-full"></div>
+                                        <h3 className="text-sm font-semibold text-slate-700">Isi Pertanyaan</h3>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-medium text-slate-500 block">Pertanyaan</label>
+                                            <textarea
+                                                className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 px-4 py-3 text-sm min-h-[120px] leading-relaxed focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:bg-white outline-none transition-all resize-y"
+                                                style={{ fontSize: '14px', lineHeight: '1.6' }}
+                                                value={formData.pertanyaan}
+                                                onChange={(e) => setFormData({ ...formData, pertanyaan: e.target.value })}
+                                                placeholder="Contoh: Ibukota Indonesia adalah ..."
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-medium text-slate-500 block">
+                                                URL Gambar <span className="text-slate-400 font-normal">(opsional)</span>
+                                            </label>
+                                            <Input
+                                                value={formData.gambar_url}
+                                                onChange={(e) => setFormData({ ...formData, gambar_url: e.target.value })}
+                                                placeholder="https://drive.google.com/file/d/..."
+                                                className="h-11 bg-slate-50 border-slate-200 focus:bg-white"
+                                            />
+                                            <p className="text-xs text-slate-400">
+                                                Gunakan jika soal memerlukan gambar (diagram, peta, dll)
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* === SECTION 3: Opsi Jawaban & Kunci === */}
+                                <div className="py-5 border-t border-slate-100">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <div className="w-1 h-4 bg-amber-500 rounded-full"></div>
+                                        <h3 className="text-sm font-semibold text-slate-700">Opsi Jawaban & Kunci</h3>
+                                    </div>
+                                    <div className="space-y-3 p-4 bg-slate-50/70 rounded-xl border border-slate-200">
+                                        {['A', 'B', 'C', 'D', 'E'].map((opt) => {
+                                            const key = `opsi_${opt.toLowerCase()}` as keyof typeof formData;
+                                            const isKey = formData.tipe === 'COMPLEX'
+                                                ? formData.kunci_jawaban.split(',').includes(opt)
+                                                : formData.kunci_jawaban === opt;
+
+                                            return (
+                                                <div key={opt} className="flex items-center gap-3">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleKeySelection(opt)}
+                                                        className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm transition-all shadow-sm flex-shrink-0 ${isKey
+                                                            ? 'bg-emerald-500 text-white shadow-emerald-500/30 ring-2 ring-emerald-300'
+                                                            : 'bg-white text-slate-500 hover:bg-slate-100 border-2 border-slate-200'
+                                                            }`}
+                                                    >
+                                                        {opt}
+                                                    </button>
+                                                    <div className="flex-1 relative">
+                                                        <Input
+                                                            value={formData[key] as string}
+                                                            onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+                                                            placeholder={`Opsi ${opt}${opt === 'E' ? ' (opsional)' : ''}`}
+                                                            className={`h-10 text-sm bg-white focus:bg-white transition-all ${isKey
+                                                                ? 'border-emerald-400 ring-1 ring-emerald-200'
+                                                                : 'border-slate-200'
+                                                                }`}
+                                                        />
+                                                        {isKey && (
+                                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-emerald-600 flex items-center gap-1">
+                                                                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                                </svg>
+                                                                Kunci
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-200 text-xs text-slate-500">
+                                            <span className="inline-flex items-center justify-center w-5 h-5 bg-emerald-500 text-white rounded text-[10px] font-bold">A</span>
+                                            <span>Klik huruf untuk memilih kunci jawaban.{formData.tipe === 'COMPLEX' && ' Bisa pilih lebih dari satu.'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* === SECTION 4: Pengaturan Soal === */}
+                                <div className="py-5 border-t border-slate-100">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <div className="w-1 h-4 bg-purple-500 rounded-full"></div>
+                                        <h3 className="text-sm font-semibold text-slate-700">Pengaturan Soal</h3>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-medium text-slate-500 block">Bobot</label>
+                                            <Input
+                                                type="number"
+                                                value={formData.bobot}
+                                                onChange={(e) => setFormData({ ...formData, bobot: parseInt(e.target.value) || 1 })}
+                                                className="h-11 bg-slate-50 border-slate-200 focus:bg-white"
+                                            />
+                                            <p className="text-xs text-slate-400">Nilai soal (default 1)</p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-medium text-slate-500 block">
+                                                Kategori <span className="text-slate-400 font-normal">(opsional)</span>
+                                            </label>
+                                            <Input
+                                                value={formData.kategori}
+                                                onChange={(e) => setFormData({ ...formData, kategori: e.target.value })}
+                                                placeholder="Contoh: Matematika"
+                                                className="h-11 bg-slate-50 border-slate-200 focus:bg-white"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* === Submit Buttons === */}
+                                <div className="flex gap-3 pt-5 border-t border-slate-200">
+                                    <Button type="button" variant="outline" className="flex-1 h-11" onClick={handleCloseModal}>
                                         Batal
                                     </Button>
-                                    <Button type="submit" className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/30" disabled={isSubmitting}>
+                                    <Button type="submit" className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/30" disabled={isSubmitting}>
                                         {isSubmitting ? (
                                             <>
                                                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />

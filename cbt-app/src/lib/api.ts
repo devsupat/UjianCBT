@@ -126,3 +126,17 @@ export async function updateConfig(key: string, value: string | number | boolean
 export async function exportResults(): Promise<ApiResponse<unknown[][]>> {
     return fetchApi<unknown[][]>('exportResults');
 }
+
+// ===== PIN AUTHENTICATION APIs =====
+
+export async function getExamPinStatus(): Promise<ApiResponse<{ isPinRequired: boolean }>> {
+    return fetchApi<{ isPinRequired: boolean }>('getExamPinStatus');
+}
+
+export async function validateExamPin(pin: string): Promise<ApiResponse> {
+    return fetchApi('validateExamPin', 'POST', { pin });
+}
+
+export async function setExamPin(pin: string, adminPassword: string): Promise<ApiResponse> {
+    return fetchApi('setExamPin', 'POST', { pin, adminPassword });
+}

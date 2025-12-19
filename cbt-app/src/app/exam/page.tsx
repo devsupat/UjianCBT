@@ -68,6 +68,31 @@ export default function ExamPage() {
         }
     }, [user, isExamStarted, router]);
 
+    // Check PIN validation
+    useEffect(() => {
+        async function checkPinAccess() {
+            if (!user) return;
+
+            // Check if PIN is required
+            const { getExamPinStatus } = await import('@/lib/api');
+            const pinStatus = await getExamPinStatus();
+
+            if (pinStatus.success && pinStatus.data?.isPinRequired) {
+                // PIN required - check if validated
+                const pinValidated = sessionStorage.getItem('pin_validated');
+                if (!pinValidated) {
+                    // Not validated, redirect to PIN page
+                    router.replace('/pin-verify');
+                    return;
+                }
+            }
+        }
+
+        if (user && isExamStarted) {
+            checkPinAccess();
+        }
+    }, [user, isExamStarted, router]);
+
     // Load questions
     useEffect(() => {
         async function loadQuestions() {
@@ -263,14 +288,14 @@ export default function ExamPage() {
         <div className="h-screen flex flex-col overflow-hidden" style={{ backgroundColor: '#f1f5f9' }}>
             {/* ==================== WARNING BAR ==================== */}
             <div
-                className="flex-shrink-0 text-white flex items-center justify-center gap-3 py-2 px-6 text-sm font-semibold"
+                className="flex-shrink-0 text-white flex items-center justify-center gap-2 py-1.5 px-6"
                 style={{
-                    background: 'linear-gradient(90deg, #dc2626 0%, #ef4444 50%, #dc2626 100%)',
-                    backgroundSize: '200% 100%',
-                    animation: 'warningSlide 3s linear infinite'
+                    backgroundColor: '#b91c1c',
+                    fontSize: '13px',
+                    fontWeight: '500'
                 }}
             >
-                <AlertTriangle className="w-5 h-5" />
+                <AlertTriangle className="w-4 h-4" />
                 <span>MODE UJIAN AKTIF - Jangan keluar dari halaman ini atau menutup browser</span>
             </div>
 
@@ -284,7 +309,7 @@ export default function ExamPage() {
                     <div className="flex items-center gap-4">
                         <Shield className="w-8 h-8" />
                         <div>
-                            <h1 className="text-lg font-bold">CBT Ujian Online Hebat 2024</h1>
+                            <h1 className="text-lg font-bold">Persiapan TKA Siswa SDN Sukasari 4 Tahun ajaran 2025/2026</h1>
                             <p className="text-sm opacity-90">Peserta: {user.nama_lengkap}</p>
                         </div>
                     </div>
@@ -325,7 +350,7 @@ export default function ExamPage() {
                         }}
                     >
                         {/* ==================== QUESTION AREA ==================== */}
-                        <main style={{ paddingRight: '16px' }}>
+                        <main style={{ paddingLeft: '24px', paddingRight: '16px' }}>
                             <AnimatePresence mode="wait">
                                 {currentQuestion && (
                                     <motion.div
@@ -335,13 +360,13 @@ export default function ExamPage() {
                                         exit={{ opacity: 0, y: -10 }}
                                         transition={{ duration: 0.2 }}
                                     >
-                                        {/* Question Header with Gradient */}
+                                        {/* Question Header with Gradient - COMPACT */}
                                         <div
                                             className="text-white flex justify-between items-center"
                                             style={{
                                                 background: 'linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%)',
                                                 borderRadius: '12px 12px 0 0',
-                                                padding: '16px 24px'
+                                                padding: '12px 20px'
                                             }}
                                         >
                                             <div>
@@ -350,12 +375,12 @@ export default function ExamPage() {
                                             </div>
                                             <button
                                                 onClick={() => toggleFlag(currentQuestion.id_soal)}
-                                                className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all"
+                                                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors"
                                                 style={{
                                                     background: flaggedQuestions.has(currentQuestion.id_soal)
                                                         ? '#f59e0b'
-                                                        : 'rgba(255,255,255,0.2)',
-                                                    border: '2px solid white',
+                                                        : 'transparent',
+                                                    border: '1px solid rgba(255,255,255,0.7)',
                                                     color: 'white'
                                                 }}
                                             >
@@ -462,8 +487,8 @@ export default function ExamPage() {
                                             )}
                                         </div>
 
-                                        {/* Navigation Buttons - EXPANDED */}
-                                        <div className="flex gap-6 justify-center mt-4">
+                                        {/* Navigation Buttons */}
+                                        <div className="flex gap-6 justify-center mt-6">
                                             <button
                                                 onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
                                                 disabled={currentQuestionIndex === 0}
@@ -549,12 +574,15 @@ export default function ExamPage() {
                                 </div>
                             </div>
 
+                            {/* Section Label for Question Numbers */}
+                            <p style={{ color: '#64748b', fontSize: '12px', fontWeight: '500', marginBottom: '10px' }}>Nomor Soal</p>
+
                             {/* Question Grid - FLEX WRAP untuk semua nomor terlihat */}
                             <div
                                 style={{
                                     display: 'flex',
                                     flexWrap: 'wrap',
-                                    gap: '8px',
+                                    gap: '10px',
                                     marginBottom: '24px'
                                 }}
                             >
@@ -586,7 +614,7 @@ export default function ExamPage() {
                                         <button
                                             key={q.id_soal}
                                             onClick={() => setCurrentQuestionIndex(index)}
-                                            className="font-bold text-sm rounded-lg transition-all hover:scale-110"
+                                            className="font-bold text-sm rounded-lg hover:opacity-80"
                                             style={{
                                                 backgroundColor: bgColor,
                                                 color: textColor,
@@ -596,8 +624,9 @@ export default function ExamPage() {
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
-                                                cursor: 'pointer'
+                                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                                cursor: 'pointer',
+                                                transition: 'opacity 0.15s ease'
                                             }}
                                         >
                                             {index + 1}

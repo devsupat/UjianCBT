@@ -39,7 +39,18 @@ export default function LoginPage() {
                 const durationMinutes = response.data.exam_duration || 90;
                 setTimeRemaining(durationMinutes * 60);
                 setIsExamStarted(true);
-                router.push('/exam');
+
+                // Check if PIN is required
+                const { getExamPinStatus } = await import('@/lib/api');
+                const pinStatus = await getExamPinStatus();
+
+                if (pinStatus.success && pinStatus.data?.isPinRequired) {
+                    // PIN required - go to PIN verification page
+                    router.push('/pin-verify');
+                } else {
+                    // No PIN required - direct to exam (backward compatible)
+                    router.push('/exam');
+                }
             } else {
                 setError(response.message || 'Login gagal');
             }

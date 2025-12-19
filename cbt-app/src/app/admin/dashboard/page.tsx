@@ -20,7 +20,12 @@ import {
     AlertCircle,
     Filter,
     ArrowUpDown,
-    CircleDashed
+    CircleDashed,
+    KeyRound,
+    Shuffle,
+    Trash2,
+    Copy,
+    Check
 } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -33,8 +38,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import StudentDetailDialog from '@/components/StudentDetailDialog';
-import { getUsers, resetUserLogin, exportResults } from '@/lib/api';
+import { getUsers, resetUserLogin, exportResults, setExamPin, getExamPinStatus } from '@/lib/api';
 import type { User } from '@/types';
 
 type SortField = 'name' | 'class' | 'status' | 'score';

@@ -15,27 +15,35 @@ import {
     Shield,
     FileText,
     CheckCircle2,
-    AlertCircle
+    AlertCircle,
+    KeyRound,
+    Shuffle,
+    Trash2,
+    Copy,
+    Check
 } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { getConfig, updateConfig } from '@/lib/api';
+import { getConfig, updateConfig, setExamPin } from '@/lib/api';
 import type { ExamConfig } from '@/types';
 
 export default function ConfigPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [showPin, setShowPin] = useState(false);
+    const [showExamPin, setShowExamPin] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [copiedExamPin, setCopiedExamPin] = useState(false);
 
     const [formData, setFormData] = useState({
         exam_name: '',
         exam_duration: 90,
         admin_password: '',
         live_score_pin: '',
+        exam_pin: '',
         max_violations: 3,
     });
 
@@ -79,6 +87,15 @@ export default function ConfigPage() {
                 updates.push(updateConfig('live_score_pin', formData.live_score_pin));
             }
 
+            // Handle exam PIN separately using setExamPin
+            if (formData.exam_pin !== undefined && formData.exam_pin !== null) {
+                // Get admin password from form or sessionStorage
+                const adminPassword = formData.admin_password || sessionStorage.getItem('admin_password') || '';
+                if (adminPassword) {
+                    updates.push(setExamPin(formData.exam_pin, adminPassword));
+                }
+            }
+
             if (updates.length === 0) {
                 setSaveMessage({ type: 'success', text: 'No changes to save' });
                 setIsSaving(false);
@@ -88,7 +105,7 @@ export default function ConfigPage() {
             await Promise.all(updates);
 
             // Clear sensitive fields after save
-            setFormData(prev => ({ ...prev, admin_password: '', live_score_pin: '' }));
+            setFormData(prev => ({ ...prev, admin_password: '', live_score_pin: '', exam_pin: '' }));
             mutate(); // Refresh data
 
             setSaveMessage({ type: 'success', text: 'Settings saved successfully' });
@@ -261,6 +278,96 @@ export default function ConfigPage() {
                                                 {showPin ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                             </button>
                                         </div>
+                                    </div>
+
+                                    {/* Exam PIN - NEW! */}
+                                    <div className="p-6 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-2 border-emerald-200 space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <KeyRound className="w-4 h-4 text-emerald-600" />
+                                                <Label className="text-slate-700 font-bold text-sm">Exam PIN</Label>
+                                            </div>
+                                            <span className="text-[10px] font-semibold px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">Exam Start Control</span>
+                                        </div>
+                                        <p className="text-xs text-slate-500 leading-relaxed">Siswa harus input PIN ini setelah login untuk mulai ujian. Kosongkan untuk disable.</p>
+
+                                        <div className="relative">
+                                            <Input
+                                                type={showExamPin ? 'text' : 'password'}
+                                                value={formData.exam_pin}
+                                                onChange={(e) => setFormData({ ...formData, exam_pin: e.target.value.toUpperCase() })}
+                                                placeholder="Enter PIN (e.g., 2024 or ABC123)"
+                                                maxLength={10}
+                                                className="pr-12 h-12 bg-white border-2 border-emerald-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all font-mono text-lg"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowExamPin(!showExamPin)}
+                                                className="absolute right-4 top-3.5 text-slate-400 hover:text-slate-600 transition-colors z-10"
+                                            >
+                                                {showExamPin ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                            </button>
+                                        </div>
+
+                                        {/* Action Buttons */}
+                                        <div className="flex gap-2">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => {
+                                                    const randomPin = Math.floor(100000 + Math.random() * 900000).toString();
+                                                    setFormData({ ...formData, exam_pin: randomPin });
+                                                    setShowExamPin(true);
+                                                }}
+                                                className="flex-1 h-9 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                                            >
+                                                <Shuffle className="w-3.5 h-3.5 mr-2" />
+                                                Generate Random
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => {
+                                                    if (formData.exam_pin) {
+                                                        navigator.clipboard.writeText(formData.exam_pin);
+                                                        setCopiedExamPin(true);
+                                                        setTimeout(() => setCopiedExamPin(false), 2000);
+                                                    }
+                                                }}
+                                                disabled={!formData.exam_pin}
+                                                className="flex-1 h-9 border-slate-300 text-slate-600 hover:bg-slate-50"
+                                            >
+                                                {copiedExamPin ? (
+                                                    <>
+                                                        <Check className="w-3.5 h-3.5 mr-2 text-green-600" />
+                                                        Copied!
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Copy className="w-3.5 h-3.5 mr-2" />
+                                                        Copy PIN
+                                                    </>
+                                                )}
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setFormData({ ...formData, exam_pin: '' })}
+                                                className="h-9 border-red-300 text-red-600 hover:bg-red-50 px-3"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </Button>
+                                        </div>
+
+                                        {formData.exam_pin && (
+                                            <div className="p-4 rounded-lg bg-emerald-600 text-white text-center">
+                                                <p className="text-xs font-medium opacity-90 mb-2">Current PIN (Display to students)</p>
+                                                <p className="text-4xl font-bold font-mono tracking-widest">{formData.exam_pin}</p>
+                                            </div>
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>
