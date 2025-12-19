@@ -303,7 +303,7 @@ export default function ExamPage() {
                                     ? 'bg-yellow-400 text-yellow-900 border-yellow-500 hover:bg-yellow-500'
                                     : isAnswered
                                         ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
-                                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                                        : 'bg-white text-red-600 border-2 border-red-400 font-bold hover:bg-red-50 hover:border-red-500'
                                 }
                                 ${isCurrent ? 'ring-2 ring-offset-2 ring-yellow-400' : ''}
                             `}
@@ -330,7 +330,7 @@ export default function ExamPage() {
                     <span className="text-slate-600">Ragu-ragu</span>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="w-5 h-5 rounded bg-white border-2 border-slate-200" />
+                    <div className="w-5 h-5 rounded bg-white border-2 border-red-400" />
                     <span className="text-slate-600">Belum Dijawab</span>
                 </div>
             </div>
@@ -341,7 +341,7 @@ export default function ExamPage() {
         <div className="min-h-screen bg-slate-100">
             {/* ==================== STICKY HEADER ==================== */}
             <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm">
-                <div className="max-w-[1400px] mx-auto px-12 md:px-20 lg:px-28 py-4">
+                <div className="max-w-7xl mx-auto px-6 lg:px-8 py-4">
                     <div className="flex items-center justify-between">
                         {/* Left: Exam Info */}
                         <div className="flex items-center gap-3">
@@ -412,11 +412,11 @@ export default function ExamPage() {
             </header>
 
             {/* ==================== MAIN CONTENT ==================== */}
-            <div className="max-w-[1400px] mx-auto px-12 md:px-20 lg:px-28 py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
+            <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
 
-                    {/* ==================== LEFT: QUESTION AREA (75%) ==================== */}
-                    <main className="lg:col-span-3">
+                    {/* ==================== LEFT: QUESTION AREA (80%) ==================== */}
+                    <main className="lg:col-span-4">
                         <AnimatePresence mode="wait">
                             {currentQuestion && (
                                 <motion.div
