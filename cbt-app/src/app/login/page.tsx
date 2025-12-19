@@ -44,7 +44,10 @@ export default function LoginPage() {
                 const { getExamPinStatus } = await import('@/lib/api');
                 const pinStatus = await getExamPinStatus();
 
-                if (pinStatus.success && pinStatus.data?.isPinRequired) {
+                // isPinRequired is at top level of response, not inside data
+                const isPinRequired = pinStatus.data?.isPinRequired || (pinStatus as unknown as { isPinRequired?: boolean }).isPinRequired;
+
+                if (pinStatus.success && isPinRequired) {
                     // PIN required - go to PIN verification page
                     router.push('/pin-verify');
                 } else {

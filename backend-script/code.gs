@@ -629,19 +629,27 @@ function handleResetUserLogin(params) {
 
 function handleGetExamPinStatus() {
   const config = getConfig();
-  const examPin = config.exam_pin || "";
+  // Ensure exam_pin is a string
+  const examPin = String(config.exam_pin || "");
   
   // Return true if PIN is required (not empty)
   return { 
     success: true, 
-    isPinRequired: examPin.trim() !== "" 
+    data: {
+      isPinRequired: examPin.trim() !== ""
+    }
   };
 }
 
 function handleValidateExamPin(params) {
+  // Handle missing params
+  if (!params || !params.pin) {
+    return { success: false, message: "PIN is required" };
+  }
+  
   const { pin } = params;
   const config = getConfig();
-  const examPin = config.exam_pin || "";
+  const examPin = String(config.exam_pin || "");
   
   // If no PIN set, validation always succeeds (backward compatible)
   if (examPin.trim() === "") {
@@ -649,7 +657,7 @@ function handleValidateExamPin(params) {
   }
   
   // Validate PIN
-  if (pin && pin.toString().trim() === examPin.trim()) {
+  if (pin && String(pin).trim() === examPin.trim()) {
     return { success: true, message: "PIN valid" };
   }
   
@@ -657,6 +665,11 @@ function handleValidateExamPin(params) {
 }
 
 function handleSetExamPin(params) {
+  // Handle missing params
+  if (!params) {
+    return { success: false, message: "Invalid request" };
+  }
+  
   const { pin, adminPassword } = params;
   
   // Verify admin password

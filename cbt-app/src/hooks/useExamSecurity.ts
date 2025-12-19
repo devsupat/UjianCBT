@@ -34,7 +34,10 @@ export function useExamSecurity({
 
         if (count >= maxViolations) {
             isBlockedRef.current = true;
-            onMaxViolations();
+            // Delay auto-submit by 10 seconds to show countdown warning
+            setTimeout(() => {
+                onMaxViolations();
+            }, 10000);
         }
     }, [enabled, maxViolations, onViolation, onMaxViolations]);
 

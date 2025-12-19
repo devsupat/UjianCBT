@@ -60,6 +60,7 @@ export default function ExamPage() {
     const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
     const [flaggedQuestions, setFlaggedQuestions] = useState<Set<string>>(new Set());
     const [showMobileDrawer, setShowMobileDrawer] = useState(false);
+    const [showWarningBar, setShowWarningBar] = useState(true);
 
     // Redirect if not logged in
     useEffect(() => {
@@ -175,6 +176,15 @@ export default function ExamPage() {
         };
     }, []);
 
+    // Auto-hide warning bar after 5 minutes
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setShowWarningBar(false);
+        }, 5 * 60 * 1000); // 5 minutes
+
+        return () => clearTimeout(timer);
+    }, []);
+
     // Handle violation from security hook
     const handleViolation = useCallback(async (type: ViolationType, count: number) => {
         if (!user) return;
@@ -188,34 +198,22 @@ export default function ExamPage() {
             console.error('Failed to report violation:', error);
         }
 
-        const countdown = count === 1 ? 10 : count === 2 ? 15 : 0;
+        // All violations get countdown: 1st=10s, 2nd=15s, 3rd=10s then kick
+        const countdown = count === 1 ? 10 : count === 2 ? 15 : 10;
         setWarningCountdown(countdown);
         setShowWarning(true);
 
-        if (countdown > 0) {
-            const interval = setInterval(() => {
-                setWarningCountdown((prev) => {
-                    if (prev <= 1) {
-                        clearInterval(interval);
-                        setShowWarning(false);
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
-        }
+        const interval = setInterval(() => {
+            setWarningCountdown((prev) => {
+                if (prev <= 1) {
+                    clearInterval(interval);
+                    setShowWarning(false);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
     }, [user, incrementViolations, setViolations]);
-
-    const handleMaxViolations = useCallback(() => {
-        handleSubmit(true);
-    }, []);
-
-    useExamSecurity({
-        maxViolations: 3,
-        onViolation: handleViolation,
-        onMaxViolations: handleMaxViolations,
-        enabled: !isSubmitted && !!user,
-    });
 
     const handleSubmit = async (forced = false) => {
         if (!user || isSubmitting) return;
@@ -244,6 +242,17 @@ export default function ExamPage() {
             setShowSubmitConfirm(false);
         }
     };
+
+    const handleMaxViolations = useCallback(() => {
+        handleSubmit(true);
+    }, [handleSubmit]);
+
+    useExamSecurity({
+        maxViolations: 3,
+        onViolation: handleViolation,
+        onMaxViolations: handleMaxViolations,
+        enabled: !isSubmitted && !!user,
+    });
 
     const handleAnswerSelect = (questionId: string, value: string, isComplex: boolean) => {
         if (isComplex) {
@@ -287,17 +296,19 @@ export default function ExamPage() {
     return (
         <div className="h-screen flex flex-col overflow-hidden" style={{ backgroundColor: '#f1f5f9' }}>
             {/* ==================== WARNING BAR ==================== */}
-            <div
-                className="flex-shrink-0 text-white flex items-center justify-center gap-2 py-1.5 px-6"
-                style={{
-                    backgroundColor: '#b91c1c',
-                    fontSize: '13px',
-                    fontWeight: '500'
-                }}
-            >
-                <AlertTriangle className="w-4 h-4" />
-                <span>MODE UJIAN AKTIF - Jangan keluar dari halaman ini atau menutup browser</span>
-            </div>
+            {showWarningBar && (
+                <div
+                    className="flex-shrink-0 text-white flex items-center justify-center gap-2 py-1.5 px-6"
+                    style={{
+                        backgroundColor: '#d97706', // Softer amber instead of harsh red
+                        fontSize: '13px',
+                        fontWeight: '500'
+                    }}
+                >
+                    <AlertTriangle className="w-4 h-4" />
+                    <span>MODE UJIAN AKTIF - Jangan keluar dari halaman ini atau menutup browser</span>
+                </div>
+            )}
 
             {/* ==================== MAIN HEADER ==================== */}
             <header
