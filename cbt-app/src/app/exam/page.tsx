@@ -346,7 +346,7 @@ export default function ExamPage() {
 
                                 {/* Question Content */}
                                 <div
-                                    className="bg-white p-8 mb-6"
+                                    className="bg-white p-10 lg:p-12 mb-8"
                                     style={{
                                         borderRadius: '0 0 12px 12px',
                                         boxShadow: '0 4px 6px rgba(0,0,0,0.05)'
@@ -367,18 +367,18 @@ export default function ExamPage() {
 
                                     {/* Question Text */}
                                     <p
-                                        className="mb-8"
+                                        className="mb-12"
                                         style={{
                                             color: '#1e293b',
-                                            fontSize: '18px',
-                                            lineHeight: '1.8'
+                                            fontSize: '20px',
+                                            lineHeight: '1.9'
                                         }}
                                     >
                                         {currentQuestion.pertanyaan}
                                     </p>
 
-                                    {/* Answer Options - EXACT STYLE FROM exampage.html */}
-                                    <div className="flex flex-col gap-3">
+                                    {/* Answer Options - EXPANDED SPACING */}
+                                    <div className="flex flex-col gap-5">
                                         {['A', 'B', 'C', 'D', 'E'].map((option) => {
                                             const optionKey = `opsi_${option.toLowerCase()}` as keyof Question;
                                             const optionText = currentQuestion[optionKey] as string;
@@ -393,7 +393,7 @@ export default function ExamPage() {
                                                 <button
                                                     key={option}
                                                     onClick={() => handleAnswerSelect(currentQuestion.id_soal, option, currentQuestion.tipe === 'COMPLEX')}
-                                                    className="w-full text-left flex items-center gap-4 p-5 rounded-xl transition-all duration-200 hover:translate-x-1"
+                                                    className="w-full text-left flex items-center gap-5 p-6 rounded-xl transition-all duration-200 hover:translate-x-1"
                                                     style={{
                                                         border: `3px solid ${isSelected ? '#2563eb' : '#e2e8f0'}`,
                                                         backgroundColor: isSelected ? 'rgba(37, 99, 235, 0.08)' : 'white',
@@ -404,10 +404,10 @@ export default function ExamPage() {
                                                 >
                                                     {/* Circle Label */}
                                                     <div
-                                                        className="flex-shrink-0 flex items-center justify-center font-bold text-lg"
+                                                        className="flex-shrink-0 flex items-center justify-center font-bold text-xl"
                                                         style={{
-                                                            width: '40px',
-                                                            height: '40px',
+                                                            width: '48px',
+                                                            height: '48px',
                                                             borderRadius: '50%',
                                                             border: `3px solid ${isSelected ? '#2563eb' : '#cbd5e1'}`,
                                                             backgroundColor: isSelected ? '#2563eb' : 'white',
@@ -421,8 +421,8 @@ export default function ExamPage() {
                                                         className="flex-1"
                                                         style={{
                                                             color: '#1e293b',
-                                                            fontSize: '16px',
-                                                            lineHeight: '1.6'
+                                                            fontSize: '18px',
+                                                            lineHeight: '1.7'
                                                         }}
                                                     >
                                                         {optionText}
@@ -442,18 +442,18 @@ export default function ExamPage() {
                                     )}
                                 </div>
 
-                                {/* Navigation Buttons - EXACT STYLE */}
-                                <div className="flex gap-4 justify-center">
+                                {/* Navigation Buttons - EXPANDED */}
+                                <div className="flex gap-6 justify-center mt-4">
                                     <button
                                         onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
                                         disabled={currentQuestionIndex === 0}
-                                        className="flex items-center gap-2 px-10 py-3.5 rounded-xl font-semibold transition-all hover:-translate-y-0.5 disabled:opacity-50"
+                                        className="flex items-center gap-3 px-12 py-4 rounded-xl font-semibold transition-all hover:-translate-y-0.5 disabled:opacity-50"
                                         style={{
                                             backgroundColor: 'white',
                                             color: '#1e293b',
                                             border: '2px solid #cbd5e1',
                                             boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                                            fontSize: '16px'
+                                            fontSize: '17px'
                                         }}
                                     >
                                         <ChevronLeft className="w-5 h-5" />
@@ -466,11 +466,11 @@ export default function ExamPage() {
                                             }
                                         }}
                                         disabled={currentQuestionIndex >= questions.length - 1}
-                                        className="flex items-center gap-2 px-12 py-3.5 rounded-xl font-semibold text-white transition-all hover:-translate-y-0.5 disabled:opacity-50"
+                                        className="flex items-center gap-3 px-14 py-4 rounded-xl font-semibold text-white transition-all hover:-translate-y-0.5 disabled:opacity-50"
                                         style={{
                                             backgroundColor: '#2563eb',
                                             boxShadow: '0 4px 6px rgba(37, 99, 235, 0.3)',
-                                            fontSize: '16px'
+                                            fontSize: '17px'
                                         }}
                                     >
                                         Selanjutnya
