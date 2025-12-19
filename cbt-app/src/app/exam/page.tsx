@@ -320,7 +320,7 @@ export default function ExamPage() {
             </div>
 
             {/* Legend */}
-            <div className="pt-5 mt-2 border-t border-slate-200 space-y-3 text-sm">
+            <div className="pt-6 mt-4 border-t border-slate-200 space-y-4 text-sm">
                 <div className="flex items-center gap-3">
                     <div className="w-5 h-5 rounded bg-blue-600" />
                     <span className="text-slate-600">Terjawab</span>
@@ -341,7 +341,7 @@ export default function ExamPage() {
         <div className="min-h-screen bg-slate-100">
             {/* ==================== STICKY HEADER ==================== */}
             <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm">
-                <div className="w-full px-6 lg:px-10 py-4">
+                <div className="max-w-[1400px] mx-auto px-12 md:px-20 lg:px-28 py-4">
                     <div className="flex items-center justify-between">
                         {/* Left: Exam Info */}
                         <div className="flex items-center gap-3">
@@ -412,8 +412,8 @@ export default function ExamPage() {
             </header>
 
             {/* ==================== MAIN CONTENT ==================== */}
-            <div className="w-full px-6 lg:px-10 py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <div className="max-w-[1400px] mx-auto px-12 md:px-20 lg:px-28 py-8">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
 
                     {/* ==================== LEFT: QUESTION AREA (75%) ==================== */}
                     <main className="lg:col-span-3">
