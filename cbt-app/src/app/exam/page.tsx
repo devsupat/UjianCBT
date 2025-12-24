@@ -595,8 +595,13 @@ export default function ExamPage() {
                                             <button
                                                 onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
                                                 disabled={currentQuestionIndex === 0}
-                                                className="flex items-center gap-3 px-10 py-4 rounded-xl font-semibold transition-all hover:-translate-y-0.5 disabled:opacity-50"
+                                                className="rounded-xl font-semibold transition-all hover:-translate-y-0.5 disabled:opacity-50"
                                                 style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '12px',
+                                                    padding: '16px 40px',
                                                     backgroundColor: 'white',
                                                     color: '#1e293b',
                                                     border: '2px solid #cbd5e1',
@@ -614,8 +619,13 @@ export default function ExamPage() {
                                                     }
                                                 }}
                                                 disabled={currentQuestionIndex >= questions.length - 1}
-                                                className="flex items-center gap-3 px-10 py-4 rounded-xl font-semibold text-white transition-all hover:-translate-y-0.5 disabled:opacity-50"
+                                                className="rounded-xl font-semibold text-white transition-all hover:-translate-y-0.5 disabled:opacity-50"
                                                 style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '12px',
+                                                    padding: '16px 40px',
                                                     backgroundColor: '#2563eb',
                                                     boxShadow: '0 4px 6px rgba(37, 99, 235, 0.3)',
                                                     fontSize: '16px'
@@ -624,8 +634,7 @@ export default function ExamPage() {
                                                 Selanjutnya
                                                 <ChevronRight className="w-5 h-5" />
                                             </button>
-                                        </div>
-                                    </motion.div>
+                                        </div>  </motion.div>
                                 )}
                             </AnimatePresence>
                         </main>
