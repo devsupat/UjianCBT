@@ -20,7 +20,8 @@ import {
     Shuffle,
     Trash2,
     Copy,
-    Check
+    Check,
+    Package
 } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -46,7 +47,18 @@ export default function ConfigPage() {
         live_score_pin: '',
         exam_pin: '',
         max_violations: 3,
+        active_paket: '',
     });
+
+    // Available package options
+    const paketOptions = [
+        { value: '', label: 'Semua Paket (Tanpa Filter)' },
+        { value: 'Paket1', label: 'Paket 1' },
+        { value: 'Paket2', label: 'Paket 2' },
+        { value: 'Paket3', label: 'Paket 3' },
+        { value: 'Paket4', label: 'Paket 4' },
+        { value: 'Paket5', label: 'Paket 5' },
+    ];
 
     const { data, isLoading, mutate } = useSWR<{ success: boolean; data?: ExamConfig }>(
         'adminConfig',
@@ -60,6 +72,7 @@ export default function ConfigPage() {
                 exam_name: data.data?.exam_name || '',
                 exam_duration: data.data?.exam_duration || 90,
                 max_violations: data.data?.max_violations || 3,
+                active_paket: (data.data as any)?.active_paket || '',
             }));
         }
     }, [data]);
@@ -80,6 +93,9 @@ export default function ConfigPage() {
             }
             if (formData.max_violations !== data?.data?.max_violations) {
                 updates.push(updateConfig('max_violations', formData.max_violations));
+            }
+            if (formData.active_paket !== (data?.data as any)?.active_paket) {
+                updates.push(updateConfig('active_paket', formData.active_paket));
             }
             if (formData.admin_password) {
                 updates.push(updateConfig('admin_password', formData.admin_password));
@@ -207,6 +223,37 @@ export default function ConfigPage() {
                                                 className="h-12 bg-slate-50 border-2 border-slate-200 focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
                                             />
                                         </div>
+                                    </div>
+
+                                    {/* Active Question Package */}
+                                    <div className="p-6 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 border-2 border-indigo-200 space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <Package className="w-4 h-4 text-indigo-600" />
+                                                <Label className="text-slate-700 font-bold text-sm">Paket Soal Aktif</Label>
+                                            </div>
+                                            <span className="text-[10px] font-semibold px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200">Question Filter</span>
+                                        </div>
+                                        <p className="text-xs text-slate-500 leading-relaxed">Pilih paket soal yang akan ditampilkan ke siswa. Kosongkan untuk menampilkan semua soal.</p>
+
+                                        <select
+                                            value={formData.active_paket}
+                                            onChange={(e) => setFormData({ ...formData, active_paket: e.target.value })}
+                                            className="w-full h-12 px-4 bg-white border-2 border-indigo-200 rounded-lg text-slate-700 font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer"
+                                        >
+                                            {paketOptions.map((option) => (
+                                                <option key={option.value} value={option.value}>
+                                                    {option.label}
+                                                </option>
+                                            ))}
+                                        </select>
+
+                                        {formData.active_paket && (
+                                            <div className="p-4 rounded-lg bg-indigo-600 text-white text-center">
+                                                <p className="text-xs font-medium opacity-90 mb-1">Paket Aktif Saat Ini</p>
+                                                <p className="text-2xl font-bold tracking-wide">{formData.active_paket}</p>
+                                            </div>
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>

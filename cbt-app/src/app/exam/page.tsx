@@ -24,6 +24,7 @@ import { useExamSecurity } from '@/hooks/useExamSecurity';
 import { getQuestions, syncAnswers, submitExam, reportViolation } from '@/lib/api';
 import { formatTime } from '@/lib/utils';
 import type { Question, ViolationType } from '@/types';
+import TrueFalseMultiRenderer from '@/components/TrueFalseMultiRenderer';
 
 export default function ExamPage() {
     const router = useRouter();
@@ -101,6 +102,9 @@ export default function ExamPage() {
                 const response = await getQuestions();
                 if (response.success && response.data) {
                     setQuestions(response.data);
+                    // Always start from question 1 (index 0) when questions are loaded
+                    // This fixes the shuffle bug where old index was persisted
+                    setCurrentQuestionIndex(0);
                 }
             } catch (error) {
                 console.error('Failed to load questions:', error);
@@ -112,7 +116,7 @@ export default function ExamPage() {
         if (user) {
             loadQuestions();
         }
-    }, [user, setQuestions]);
+    }, [user, setQuestions, setCurrentQuestionIndex]);
 
     // Timer countdown
     useEffect(() => {
@@ -266,6 +270,11 @@ export default function ExamPage() {
         }
     };
 
+    // Handler for TRUE_FALSE_MULTI answers
+    const handleTrueFalseMultiAnswer = (questionId: string, booleanAnswers: (boolean | null)[]) => {
+        setAnswer(questionId, booleanAnswers);
+    };
+
     const toggleFlag = (questionId: string) => {
         setFlaggedQuestions(prev => {
             const newSet = new Set(prev);
@@ -408,108 +417,191 @@ export default function ExamPage() {
                                                 boxShadow: '0 4px 6px rgba(0,0,0,0.05)'
                                             }}
                                         >
-                                            {/* Question Image */}
-                                            {currentQuestion.gambar_url && (
-                                                <div className="mb-6 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
-                                                    <Image
-                                                        src={currentQuestion.gambar_url}
-                                                        alt="Gambar soal"
-                                                        width={800}
-                                                        height={400}
-                                                        className="w-full h-auto object-contain max-h-64"
-                                                    />
-                                                </div>
-                                            )}
+                                            {/* Question Content with flexible image placement */}
+                                            {(() => {
+                                                const questionText = String(currentQuestion.pertanyaan || '');
+                                                const hasImageMarker = questionText.includes('[IMG]');
+                                                const hasImage = currentQuestion.gambar_url;
 
-                                            {/* Question Text */}
-                                            <p
-                                                className="mb-12"
-                                                style={{
-                                                    color: '#1e293b',
-                                                    fontSize: '20px',
-                                                    lineHeight: '1.9'
-                                                }}
-                                            >
-                                                {currentQuestion.pertanyaan}
-                                            </p>
-
-                                            {/* Answer Options - EXPANDED SPACING */}
-                                            <div className="flex flex-col gap-5">
-                                                {['A', 'B', 'C', 'D', 'E'].map((option) => {
-                                                    const optionKey = `opsi_${option.toLowerCase()}` as keyof Question;
-                                                    const optionText = currentQuestion[optionKey] as string;
-
-                                                    if (!optionText) return null;
-
-                                                    const isSelected = currentQuestion.tipe === 'COMPLEX'
-                                                        ? ((answers[currentQuestion.id_soal] as string[]) || []).includes(option)
-                                                        : answers[currentQuestion.id_soal] === option;
-
-                                                    return (
-                                                        <button
-                                                            key={option}
-                                                            onClick={() => handleAnswerSelect(currentQuestion.id_soal, option, currentQuestion.tipe === 'COMPLEX')}
-                                                            className="w-full text-left flex items-center gap-5 p-6 rounded-xl transition-all duration-200 hover:translate-x-1"
-                                                            style={{
-                                                                border: `3px solid ${isSelected ? '#2563eb' : '#e2e8f0'}`,
-                                                                backgroundColor: isSelected ? 'rgba(37, 99, 235, 0.08)' : 'white',
-                                                                boxShadow: isSelected
-                                                                    ? '0 4px 12px rgba(37, 99, 235, 0.2)'
-                                                                    : '0 2px 4px rgba(0,0,0,0.02)'
-                                                            }}
-                                                        >
-                                                            {/* Circle Label */}
-                                                            <div
-                                                                className="flex-shrink-0 flex items-center justify-center font-bold text-xl"
-                                                                style={{
-                                                                    width: '48px',
-                                                                    height: '48px',
-                                                                    borderRadius: '50%',
-                                                                    border: `3px solid ${isSelected ? '#2563eb' : '#cbd5e1'}`,
-                                                                    backgroundColor: isSelected ? '#2563eb' : 'white',
-                                                                    color: isSelected ? 'white' : '#1e293b',
-                                                                    boxShadow: isSelected ? '0 2px 8px rgba(37, 99, 235, 0.3)' : 'none'
-                                                                }}
-                                                            >
-                                                                {option}
-                                                            </div>
-                                                            <span
-                                                                className="flex-1"
-                                                                style={{
-                                                                    color: '#1e293b',
-                                                                    fontSize: '18px',
-                                                                    lineHeight: '1.7'
-                                                                }}
-                                                            >
-                                                                {optionText}
-                                                            </span>
-                                                        </button>
+                                                // Helper function to format text
+                                                const formatText = (text: string) => text
+                                                    .replace(/&/g, '&amp;')
+                                                    .replace(/</g, '&lt;')
+                                                    .replace(/>/g, '&gt;')
+                                                    .replace(/\n/g, '<br>')
+                                                    .replace(/•/g, '&bull;')
+                                                    .replace(
+                                                        /(Jawaban benar lebih dari satu)/gi,
+                                                        '<span style="color: #dc2626; font-weight: 700;">$1</span>'
                                                     );
-                                                })}
-                                            </div>
 
-                                            {currentQuestion.tipe === 'COMPLEX' && (
-                                                <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                                                    <p className="text-sm text-amber-700 flex items-center gap-2">
-                                                        <AlertTriangle className="w-4 h-4" />
-                                                        Pilih semua jawaban yang benar untuk soal ini
-                                                    </p>
-                                                </div>
+                                                // If [IMG] marker exists, split text around it
+                                                if (hasImageMarker && hasImage) {
+                                                    const [textBefore, textAfter] = questionText.split('[IMG]');
+                                                    return (
+                                                        <>
+                                                            {/* Text before image */}
+                                                            {textBefore.trim() && (
+                                                                <div
+                                                                    className="mb-6"
+                                                                    style={{ color: '#1e293b', fontSize: '20px', lineHeight: '1.9' }}
+                                                                    dangerouslySetInnerHTML={{ __html: formatText(textBefore) }}
+                                                                />
+                                                            )}
+
+                                                            {/* Image in the middle */}
+                                                            <div className="mb-6 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
+                                                                <Image
+                                                                    src={currentQuestion.gambar_url!}
+                                                                    alt="Gambar soal"
+                                                                    width={800}
+                                                                    height={400}
+                                                                    className="w-full h-auto object-contain max-h-80"
+                                                                />
+                                                            </div>
+
+                                                            {/* Text after image */}
+                                                            {textAfter.trim() && (
+                                                                <div
+                                                                    className="mb-12"
+                                                                    style={{ color: '#1e293b', fontSize: '20px', lineHeight: '1.9' }}
+                                                                    dangerouslySetInnerHTML={{ __html: formatText(textAfter) }}
+                                                                />
+                                                            )}
+                                                        </>
+                                                    );
+                                                }
+
+                                                // Default: Image first, then all text (original behavior)
+                                                return (
+                                                    <>
+                                                        {/* Question Image (if no [IMG] marker) */}
+                                                        {hasImage && (
+                                                            <div className="mb-6 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
+                                                                <Image
+                                                                    src={currentQuestion.gambar_url!}
+                                                                    alt="Gambar soal"
+                                                                    width={800}
+                                                                    height={400}
+                                                                    className="w-full h-auto object-contain max-h-80"
+                                                                />
+                                                            </div>
+                                                        )}
+
+                                                        {/* Question Text */}
+                                                        <div
+                                                            className="mb-12"
+                                                            style={{ color: '#1e293b', fontSize: '20px', lineHeight: '1.9' }}
+                                                            dangerouslySetInnerHTML={{ __html: formatText(questionText) }}
+                                                        />
+                                                    </>
+                                                );
+                                            })()}
+
+                                            {/* Answer Options - Conditional by question type */}
+                                            {currentQuestion.tipe === 'TRUE_FALSE_MULTI' && currentQuestion.statements_json ? (
+                                                <TrueFalseMultiRenderer
+                                                    statements={currentQuestion.statements_json}
+                                                    answers={(answers[currentQuestion.id_soal] as (boolean | null)[]) || []}
+                                                    onAnswerChange={(boolAnswers) => handleTrueFalseMultiAnswer(currentQuestion.id_soal, boolAnswers)}
+                                                />
+                                            ) : (
+                                                /* SINGLE and COMPLEX answer options - UNCHANGED */
+                                                <>
+                                                    <div className="flex flex-col gap-5">
+                                                        {['A', 'B', 'C', 'D', 'E'].map((option) => {
+                                                            const optionKey = `opsi_${option.toLowerCase()}` as keyof Question;
+                                                            const optionText = currentQuestion[optionKey] as string;
+
+                                                            if (!optionText) return null;
+
+                                                            const isSelected = currentQuestion.tipe === 'COMPLEX'
+                                                                ? ((answers[currentQuestion.id_soal] as string[]) || []).includes(option)
+                                                                : answers[currentQuestion.id_soal] === option;
+
+                                                            return (
+                                                                <button
+                                                                    key={option}
+                                                                    onClick={() => handleAnswerSelect(currentQuestion.id_soal, option, currentQuestion.tipe === 'COMPLEX')}
+                                                                    className="w-full text-left flex items-center gap-5 p-6 rounded-xl transition-all duration-200 hover:translate-x-1"
+                                                                    style={{
+                                                                        border: `3px solid ${isSelected ? '#2563eb' : '#e2e8f0'}`,
+                                                                        backgroundColor: isSelected ? 'rgba(37, 99, 235, 0.08)' : 'white',
+                                                                        boxShadow: isSelected
+                                                                            ? '0 4px 12px rgba(37, 99, 235, 0.2)'
+                                                                            : '0 2px 4px rgba(0,0,0,0.02)'
+                                                                    }}
+                                                                >
+                                                                    {/* Circle Label */}
+                                                                    <div
+                                                                        className="flex-shrink-0 flex items-center justify-center font-bold text-xl"
+                                                                        style={{
+                                                                            width: '48px',
+                                                                            height: '48px',
+                                                                            borderRadius: '50%',
+                                                                            border: `3px solid ${isSelected ? '#2563eb' : '#cbd5e1'}`,
+                                                                            backgroundColor: isSelected ? '#2563eb' : 'white',
+                                                                            color: isSelected ? 'white' : '#1e293b',
+                                                                            boxShadow: isSelected ? '0 2px 8px rgba(37, 99, 235, 0.3)' : 'none'
+                                                                        }}
+                                                                    >
+                                                                        {option}
+                                                                    </div>
+                                                                    <span
+                                                                        className="flex-1"
+                                                                        style={{
+                                                                            color: '#1e293b',
+                                                                            fontSize: '18px',
+                                                                            lineHeight: '1.7'
+                                                                        }}
+                                                                        dangerouslySetInnerHTML={{
+                                                                            __html: String(optionText || '')
+                                                                                .replace(/&/g, '&amp;')
+                                                                                .replace(/</g, '&lt;')
+                                                                                .replace(/>/g, '&gt;')
+                                                                                .replace(/\n/g, '<br>')
+                                                                                .replace(/•/g, '&bull;')
+                                                                        }}
+                                                                    />
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+
+                                                    {currentQuestion.tipe === 'COMPLEX' && (
+                                                        <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                                                            <p className="text-sm text-amber-700 flex items-center gap-2">
+                                                                <AlertTriangle className="w-4 h-4" />
+                                                                Pilih semua jawaban yang benar untuk soal ini
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </>
                                             )}
                                         </div>
 
-                                        {/* Navigation Buttons */}
-                                        <div className="flex gap-6 justify-center mt-6">
+                                        {/* Navigation Buttons - centered group */}
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                justifyContent: 'center',
+                                                alignItems: 'center',
+                                                width: '100%',
+                                                marginTop: '40px',
+                                                marginBottom: '24px',
+                                                gap: '16px'
+                                            }}
+                                        >
                                             <button
                                                 onClick={() => setCurrentQuestionIndex(Math.max(0, currentQuestionIndex - 1))}
                                                 disabled={currentQuestionIndex === 0}
-                                                className="flex items-center gap-3 px-12 py-4 rounded-xl font-semibold transition-all hover:-translate-y-0.5 disabled:opacity-50"
+                                                className="flex items-center gap-3 px-10 py-4 rounded-xl font-semibold transition-all hover:-translate-y-0.5 disabled:opacity-50"
                                                 style={{
                                                     backgroundColor: 'white',
                                                     color: '#1e293b',
                                                     border: '2px solid #cbd5e1',
                                                     boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                                                    fontSize: '17px'
+                                                    fontSize: '16px'
                                                 }}
                                             >
                                                 <ChevronLeft className="w-5 h-5" />
@@ -522,11 +614,11 @@ export default function ExamPage() {
                                                     }
                                                 }}
                                                 disabled={currentQuestionIndex >= questions.length - 1}
-                                                className="flex items-center gap-3 px-14 py-4 rounded-xl font-semibold text-white transition-all hover:-translate-y-0.5 disabled:opacity-50"
+                                                className="flex items-center gap-3 px-10 py-4 rounded-xl font-semibold text-white transition-all hover:-translate-y-0.5 disabled:opacity-50"
                                                 style={{
                                                     backgroundColor: '#2563eb',
                                                     boxShadow: '0 4px 6px rgba(37, 99, 235, 0.3)',
-                                                    fontSize: '17px'
+                                                    fontSize: '16px'
                                                 }}
                                             >
                                                 Selanjutnya

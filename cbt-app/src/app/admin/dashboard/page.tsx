@@ -40,7 +40,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import StudentDetailDialog from '@/components/StudentDetailDialog';
-import { getUsers, resetUserLogin, exportResults, setExamPin, getExamPinStatus } from '@/lib/api';
+import { getUsers, resetUserLogin, exportResults, setExamPin, getExamPinStatus, resetTodayExam } from '@/lib/api';
 import type { User } from '@/types';
 
 type SortField = 'name' | 'class' | 'status' | 'score';
@@ -63,6 +63,11 @@ export default function AdminDashboard() {
     // Sorting
     const [sortField, setSortField] = useState<SortField>('name');
     const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
+    // Reset Exam state
+    const [showResetDialog, setShowResetDialog] = useState(false);
+    const [resetPassword, setResetPassword] = useState('');
+    const [isResetting, setIsResetting] = useState(false);
 
     const { data, isLoading, mutate } = useSWR<{ success: boolean; data?: User[] }>(
         'adminUsers',
@@ -227,6 +232,32 @@ export default function AdminDashboard() {
         } else {
             setSortField(field);
             setSortDirection('asc');
+        }
+    };
+
+    // Handle Reset Today Exam
+    const handleResetTodayExam = async () => {
+        if (!resetPassword.trim()) {
+            setMessage({ type: 'error', text: 'Password admin diperlukan' });
+            return;
+        }
+
+        setIsResetting(true);
+        try {
+            const res = await resetTodayExam(resetPassword);
+            if (res.success) {
+                setMessage({ type: 'success', text: res.message || `Berhasil mereset ${res.data?.resetCount || 0} peserta` });
+                setShowResetDialog(false);
+                setResetPassword('');
+                mutate();
+            } else {
+                setMessage({ type: 'error', text: res.message || 'Gagal mereset ujian' });
+            }
+        } catch {
+            setMessage({ type: 'error', text: 'Gagal mereset ujian' });
+        } finally {
+            setIsResetting(false);
+            setTimeout(() => setMessage(null), 4000);
         }
     };
 
@@ -572,6 +603,63 @@ export default function AdminDashboard() {
                                     <p className="text-2xl font-bold text-blue-500">99.9<span className="text-xs text-blue-600/70 ml-1">%</span></p>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Reset Exam Section */}
+                        <div className="p-6 rounded-2xl bg-white/80 backdrop-blur-xl shadow-lg ring-1 ring-rose-200/60">
+                            <h4 className="font-semibold text-rose-600 mb-3 flex items-center gap-2 text-sm uppercase tracking-wider">
+                                <Trash2 className="w-4 h-4" />
+                                Reset Ujian
+                            </h4>
+                            <p className="text-xs text-slate-500 mb-4">
+                                Reset semua status ujian peserta ke BELUM, hapus skor dan data ujian hari ini.
+                            </p>
+                            {!showResetDialog ? (
+                                <Button
+                                    variant="outline"
+                                    className="w-full border-rose-300 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                                    onClick={() => setShowResetDialog(true)}
+                                >
+                                    <RotateCcw className="w-4 h-4 mr-2" />
+                                    Reset Ujian Hari Ini
+                                </Button>
+                            ) : (
+                                <div className="space-y-3">
+                                    <Input
+                                        type="password"
+                                        placeholder="Masukkan password admin"
+                                        value={resetPassword}
+                                        onChange={(e) => setResetPassword(e.target.value)}
+                                        className="border-rose-200 focus:border-rose-400 focus:ring-rose-200"
+                                    />
+                                    <div className="flex gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="flex-1"
+                                            onClick={() => {
+                                                setShowResetDialog(false);
+                                                setResetPassword('');
+                                            }}
+                                            disabled={isResetting}
+                                        >
+                                            Batal
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            className="flex-1 bg-rose-600 hover:bg-rose-700 text-white"
+                                            onClick={handleResetTodayExam}
+                                            disabled={isResetting}
+                                        >
+                                            {isResetting ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                'Konfirmasi Reset'
+                                            )}
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

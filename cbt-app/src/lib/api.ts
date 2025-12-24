@@ -140,3 +140,7 @@ export async function validateExamPin(pin: string): Promise<ApiResponse> {
 export async function setExamPin(pin: string, adminPassword: string): Promise<ApiResponse> {
     return fetchApi('setExamPin', 'POST', { pin, adminPassword });
 }
+
+export async function resetTodayExam(adminPassword: string): Promise<ApiResponse<{ resetCount: number }>> {
+    return fetchApi('resetTodayExam', 'POST', { adminPassword });
+}

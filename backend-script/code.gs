@@ -152,6 +152,9 @@ function doPost(e) {
       case "setExamPin":
         result = handleSetExamPin(params);
         break;
+      case "resetTodayExam":
+        result = handleResetTodayExam(params);
+        break;
       default:
         result = { success: false, message: "Unknown action" };
     }
@@ -178,7 +181,13 @@ function handleGetConfig() {
 }
 
 function handleGetQuestions() {
-  const cached = cache.get("questions");
+  // Get active package filter from Config
+  const config = getConfig();
+  const activePaket = (config.active_paket || "").toString().trim();
+  
+  // Create cache key that includes paket filter (so different pakets have different caches)
+  const cacheKey = activePaket ? `questions_${activePaket}` : "questions";
+  const cached = cache.get(cacheKey);
   if (cached) return JSON.parse(cached);
   
   const sheet = getSheet("Questions");
@@ -188,6 +197,15 @@ function handleGetQuestions() {
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     if (!row[0]) continue; // Skip empty rows
+    
+    // Get paket from column P (index 15)
+    const paketSoal = row[15] ? row[15].toString().trim() : "";
+    
+    // Filter by active paket if set
+    // If activePaket is set, only include questions that match OR have no paket set
+    if (activePaket && paketSoal && paketSoal !== activePaket) {
+      continue;
+    }
     
     questions.push({
       id_soal: row[0],
@@ -201,7 +219,11 @@ function handleGetQuestions() {
       opsi_d: row[8],
       opsi_e: row[9] || null,
       bobot: row[11] || 1,
-      kategori: row[12] || null
+      kategori: row[12] || null,
+      paket: paketSoal,
+      // TRUE_FALSE_MULTI specific fields (optional)
+      statements_json: row[13] ? JSON.parse(row[13]) : null,
+      answer_json: row[14] ? JSON.parse(row[14]) : null
       // kunci_jawaban (row[10]) is NOT sent to client
     });
   }
@@ -209,7 +231,7 @@ function handleGetQuestions() {
   questions.sort((a, b) => a.nomor_urut - b.nomor_urut);
   
   const result = { success: true, data: questions };
-  cache.put("questions", JSON.stringify(result), CACHE_DURATION);
+  cache.put(cacheKey, JSON.stringify(result), CACHE_DURATION);
   
   return result;
 }
@@ -225,19 +247,92 @@ function handleGetLiveScore() {
   let diskualifikasi = 0;
   let belum = 0;
   
+  // Get questions for real-time grading (only load once for all students)
+  const qSheet = getSheet("Questions");
+  const questions = qSheet.getDataRange().getValues();
+  
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     if (!row[0]) continue;
     
     totalUsers++;
     const status = row[10];
+    const id_siswa = row[0];
     
-    if (status === "SEDANG") sedang++;
-    else if (status === "SELESAI") selesai++;
-    else if (status === "DISKUALIFIKASI") diskualifikasi++;
-    else belum++;
-    
-    if (status === "SELESAI" || status === "DISKUALIFIKASI") {
+    if (status === "SEDANG") {
+      sedang++;
+      
+      // Real-time scoring: Get cached answers and calculate temporary score
+      const cachedAnswers = cache.get(`answers_${id_siswa}`);
+      let tempScore = 0;
+      let answeredCount = 0;
+      
+      if (cachedAnswers) {
+        const answers = JSON.parse(cachedAnswers);
+        answeredCount = Object.keys(answers).length;
+        
+        // Calculate score using same logic as handleSubmitExam
+        let totalScore = 0;
+        let maxScore = 0;
+        
+        for (let j = 1; j < questions.length; j++) {
+          const q = questions[j];
+          if (!q[0]) continue;
+          
+          const id_soal = q[0];
+          const tipe = q[2];
+          const kunci = q[10];
+          const bobot = q[11] || 1;
+          const jawaban = answers[id_soal];
+          
+          maxScore += bobot;
+          
+          if (!jawaban) continue;
+          
+          if (tipe === "SINGLE") {
+            if (jawaban === kunci) {
+              totalScore += bobot;
+            }
+          } else if (tipe === "COMPLEX") {
+            const kunciArray = kunci.toString().split(",").map(k => k.trim()).sort();
+            const jawabanArray = Array.isArray(jawaban) 
+              ? jawaban.sort() 
+              : jawaban.toString().split(",").map(j => j.trim()).sort();
+            
+            if (JSON.stringify(kunciArray) === JSON.stringify(jawabanArray)) {
+              totalScore += bobot;
+            }
+          } else if (tipe === "TRUE_FALSE_MULTI") {
+            const correctAnswers = q[14] ? JSON.parse(q[14]) : [];
+            const studentAnswers = jawaban;
+            if (Array.isArray(studentAnswers) && Array.isArray(correctAnswers) && correctAnswers.length > 0) {
+              let correctCount = 0;
+              correctAnswers.forEach((correct, idx) => {
+                if (studentAnswers[idx] === correct) correctCount++;
+              });
+              totalScore += (correctCount / correctAnswers.length) * bobot;
+            }
+          }
+        }
+        
+        tempScore = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
+      }
+      
+      // Add active student with real-time score
+      scores.push({
+        rank: 0,
+        nama: row[3],
+        kelas: row[4],
+        skor: parseFloat(tempScore.toFixed(2)),
+        status: "SEDANG",
+        waktu_selesai: "Live...",
+        waktu_submit_ms: Date.now(), // Use current time for sorting active students
+        soal_dijawab: answeredCount,
+        is_live: true
+      });
+      
+    } else if (status === "SELESAI") {
+      selesai++;
       scores.push({
         rank: 0,
         nama: row[3],
@@ -245,14 +340,33 @@ function handleGetLiveScore() {
         skor: parseFloat(row[8]) || 0,
         status: status,
         waktu_selesai: row[7] ? new Date(row[7]).toLocaleString("id-ID") : "-",
-        waktu_submit_ms: row[7] ? new Date(row[7]).getTime() : 0
+        waktu_submit_ms: row[7] ? new Date(row[7]).getTime() : 0,
+        is_live: false
       });
+    } else if (status === "DISKUALIFIKASI") {
+      diskualifikasi++;
+      scores.push({
+        rank: 0,
+        nama: row[3],
+        kelas: row[4],
+        skor: parseFloat(row[8]) || 0,
+        status: status,
+        waktu_selesai: row[7] ? new Date(row[7]).toLocaleString("id-ID") : "-",
+        waktu_submit_ms: row[7] ? new Date(row[7]).getTime() : 0,
+        is_live: false
+      });
+    } else {
+      belum++;
     }
   }
   
-  // Sort: Score DESC, Time ASC
+  // Sort: Score DESC, then by status (SELESAI first, then SEDANG), then Time ASC
   scores.sort((a, b) => {
+    // First by score (descending)
     if (b.skor !== a.skor) return b.skor - a.skor;
+    // Then finished students come before active students at same score
+    if (a.is_live !== b.is_live) return a.is_live ? 1 : -1;
+    // Then by time (ascending)
     return a.waktu_submit_ms - b.waktu_submit_ms;
   });
   
@@ -416,6 +530,17 @@ function handleSubmitExam(params) {
       if (JSON.stringify(kunciArray) === JSON.stringify(jawabanArray)) {
         totalScore += bobot;
       }
+    } else if (tipe === "TRUE_FALSE_MULTI") {
+      // Proportional scoring for TRUE_FALSE_MULTI
+      const correctAnswers = q[14] ? JSON.parse(q[14]) : []; // answer_json
+      const studentAnswers = jawaban; // array of booleans
+      if (Array.isArray(studentAnswers) && Array.isArray(correctAnswers) && correctAnswers.length > 0) {
+        let correctCount = 0;
+        correctAnswers.forEach((correct, i) => {
+          if (studentAnswers[i] === correct) correctCount++;
+        });
+        totalScore += (correctCount / correctAnswers.length) * bobot;
+      }
     }
   }
   
@@ -527,17 +652,28 @@ function handleCreateQuestion(params) {
     data.tipe,
     data.pertanyaan,
     data.gambar_url || "",
-    data.opsi_a,
-    data.opsi_b,
-    data.opsi_c,
-    data.opsi_d,
+    data.opsi_a || "",
+    data.opsi_b || "",
+    data.opsi_c || "",
+    data.opsi_d || "",
     data.opsi_e || "",
-    data.kunci_jawaban,
+    data.kunci_jawaban || "",
     data.bobot || 1,
-    data.kategori || ""
+    data.kategori || "",
+    // TRUE_FALSE_MULTI specific fields (optional)
+    data.statements_json ? JSON.stringify(data.statements_json) : "",
+    data.answer_json ? JSON.stringify(data.answer_json) : "",
+    // Paket soal (column P, index 15)
+    data.paket || ""
   ]);
   
+  // Clear all question-related caches (base + all paket variants)
   cache.remove("questions");
+  cache.remove("questions_Paket1");
+  cache.remove("questions_Paket2");
+  cache.remove("questions_Paket3");
+  cache.remove("questions_Paket4");
+  cache.remove("questions_Paket5");
   
   return { success: true, message: "Question created" };
 }
@@ -550,23 +686,34 @@ function handleUpdateQuestion(params) {
   for (let i = 1; i < allData.length; i++) {
     if (allData[i][0] === id_soal) {
       const row = i + 1;
-      sheet.getRange(row, 1, 1, 13).setValues([[
+      sheet.getRange(row, 1, 1, 16).setValues([[
         data.id_soal,
         data.nomor_urut,
         data.tipe,
         data.pertanyaan,
         data.gambar_url || "",
-        data.opsi_a,
-        data.opsi_b,
-        data.opsi_c,
-        data.opsi_d,
+        data.opsi_a || "",
+        data.opsi_b || "",
+        data.opsi_c || "",
+        data.opsi_d || "",
         data.opsi_e || "",
-        data.kunci_jawaban,
+        data.kunci_jawaban || "",
         data.bobot || 1,
-        data.kategori || ""
+        data.kategori || "",
+        // TRUE_FALSE_MULTI specific fields (optional)
+        data.statements_json ? JSON.stringify(data.statements_json) : "",
+        data.answer_json ? JSON.stringify(data.answer_json) : "",
+        // Paket soal (column P, index 15)
+        data.paket || ""
       ]]);
       
+      // Clear all question-related caches (base + all paket variants)
       cache.remove("questions");
+      cache.remove("questions_Paket1");
+      cache.remove("questions_Paket2");
+      cache.remove("questions_Paket3");
+      cache.remove("questions_Paket4");
+      cache.remove("questions_Paket5");
       return { success: true, message: "Question updated" };
     }
   }
@@ -582,7 +729,13 @@ function handleDeleteQuestion(params) {
   for (let i = 1; i < data.length; i++) {
     if (data[i][0] === id_soal) {
       sheet.deleteRow(i + 1);
+      // Clear all question-related caches
       cache.remove("questions");
+      cache.remove("questions_Paket1");
+      cache.remove("questions_Paket2");
+      cache.remove("questions_Paket3");
+      cache.remove("questions_Paket4");
+      cache.remove("questions_Paket5");
       return { success: true, message: "Question deleted" };
     }
   }
@@ -695,4 +848,72 @@ function handleSetExamPin(params) {
   cache.remove("config");
   
   return { success: true, message: "PIN set" };
+}
+
+/**
+ * Reset all users' exam status for today
+ * Clears: status_login, waktu_mulai, waktu_selesai, skor_akhir, violation_count, status_ujian
+ * Also clears cached answers
+ */
+function handleResetTodayExam(params) {
+  // Verify admin password
+  if (!params || !params.adminPassword) {
+    return { success: false, message: "Admin password required" };
+  }
+  
+  const config = getConfig();
+  if (params.adminPassword !== config.admin_password) {
+    return { success: false, message: "Unauthorized - Invalid admin password" };
+  }
+  
+  const sheet = getSheet("Users");
+  const data = sheet.getDataRange().getValues();
+  
+  let resetCount = 0;
+  
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (!row[0]) continue; // Skip empty rows
+    
+    const id_siswa = row[0];
+    const currentStatus = row[10]; // status_ujian column
+    
+    // Only reset users who have started or completed exam
+    if (currentStatus === "SEDANG" || currentStatus === "SELESAI" || currentStatus === "DISKUALIFIKASI") {
+      // Reset exam-related columns
+      // Column F (6): status_login -> false
+      sheet.getRange(i + 1, 6).setValue(false);
+      // Column G (7): waktu_mulai -> clear
+      sheet.getRange(i + 1, 7).setValue("");
+      // Column H (8): waktu_selesai -> clear  
+      sheet.getRange(i + 1, 8).setValue("");
+      // Column I (9): skor_akhir -> clear
+      sheet.getRange(i + 1, 9).setValue("");
+      // Column J (10): violation_count -> 0
+      sheet.getRange(i + 1, 10).setValue(0);
+      // Column K (11): status_ujian -> BELUM
+      sheet.getRange(i + 1, 11).setValue("BELUM");
+      // Column L (12): last_seen -> clear
+      sheet.getRange(i + 1, 12).setValue("");
+      
+      // Clear cached answers for this user
+      cache.remove(`answers_${id_siswa}`);
+      
+      resetCount++;
+    }
+  }
+  
+  // Clear all question caches
+  cache.remove("questions");
+  cache.remove("questions_Paket1");
+  cache.remove("questions_Paket2");
+  cache.remove("questions_Paket3");
+  cache.remove("questions_Paket4");
+  cache.remove("questions_Paket5");
+  
+  return { 
+    success: true, 
+    message: `Berhasil mereset ${resetCount} peserta ujian`,
+    resetCount: resetCount
+  };
 }

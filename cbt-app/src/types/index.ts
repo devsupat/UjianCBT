@@ -30,7 +30,7 @@ export interface User {
 }
 
 // Question types
-export type QuestionType = 'SINGLE' | 'COMPLEX';
+export type QuestionType = 'SINGLE' | 'COMPLEX' | 'TRUE_FALSE_MULTI';
 
 export interface Question {
     id_soal: string;
@@ -45,10 +45,13 @@ export interface Question {
     opsi_e?: string | null;
     bobot: number;
     kategori?: string | null;
+    // TRUE_FALSE_MULTI specific fields (optional)
+    statements_json?: string[] | null;
+    answer_json?: boolean[] | null;
 }
 
-// Answer types
-export type Answer = string | string[];
+// Answer types - includes (boolean | null)[] for TRUE_FALSE_MULTI unanswered statements
+export type Answer = string | string[] | boolean[] | (boolean | null)[];
 export type AnswersRecord = Record<string, Answer>;
 
 // Response from exam

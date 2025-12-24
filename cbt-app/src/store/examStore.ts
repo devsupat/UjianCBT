@@ -19,7 +19,7 @@ interface ExamStore {
 
     // Answers
     answers: AnswersRecord;
-    setAnswer: (questionId: string, answer: string | string[]) => void;
+    setAnswer: (questionId: string, answer: string | string[] | boolean[] | (boolean | null)[]) => void;
     setAllAnswers: (answers: AnswersRecord) => void;
 
     // Timer
