@@ -1,0 +1,162 @@
+/* ============================================
+   PRINT LOGIN CARDS - DEDICATED STYLESHEET
+   ============================================ */
+
+@media print {
+    /* ========== HIDE UI ELEMENTS ========== */
+
+    .no-print,
+    nav,
+    aside,
+    header,
+    footer,
+    button {
+        display: none !important;
+    }
+
+    /* ========== PAGE SETUP ========== */
+
+    @page {
+        size: A4 portrait;
+        margin: 8mm;
+    }
+
+    html,
+    body {
+        background: white !important;
+        background-color: white !important;
+        color: black !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* Override parent backgrounds without breaking layout */
+    body>div,
+    body>div>div,
+    body>div>div>div,
+    main,
+    [class*="min-h-screen"],
+    [class*="bg-gradient"],
+    [class*="bg-slate"] {
+        background: white !important;
+        background-color: white !important;
+        background-image: none !important;
+    }
+
+    /* ========== CARD GRID ========== */
+
+    .print-cards-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 5mm !important;
+        background: white !important;
+    }
+
+    /* ========== CARD STYLING ========== */
+
+    .print-card {
+        display: block !important;
+        visibility: visible !important;
+        width: 95mm !important;
+        min-height: 55mm !important;
+        border: 1pt solid black !important;
+        border-radius: 2mm !important;
+        padding: 4mm !important;
+        background: white !important;
+        color: black !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        box-shadow: none !important;
+    }
+
+    /* ========== LOGO ROW ========== */
+
+    .print-card-logos {
+        display: flex !important;
+        visibility: visible !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        margin-bottom: 3mm !important;
+        padding-bottom: 2mm !important;
+        border-bottom: 0.5pt solid #333 !important;
+        background: white !important;
+    }
+
+    .print-logo {
+        display: block !important;
+        visibility: visible !important;
+        width: 12mm !important;
+        height: 12mm !important;
+        object-fit: contain !important;
+    }
+
+    /* ========== TITLE ========== */
+
+    .print-card-title {
+        display: block !important;
+        visibility: visible !important;
+        text-align: center !important;
+        font-size: 10pt !important;
+        font-weight: bold !important;
+        color: black !important;
+        margin: 2mm 0 3mm 0 !important;
+        text-transform: uppercase !important;
+        background: white !important;
+    }
+
+    /* ========== CONTENT ========== */
+
+    .print-card-body,
+    .print-card-credentials {
+        display: block !important;
+        visibility: visible !important;
+        font-size: 9pt !important;
+        line-height: 1.6 !important;
+        color: black !important;
+        background: white !important;
+    }
+
+    .print-card-credentials {
+        margin-top: 2mm !important;
+        padding-top: 2mm !important;
+        border-top: 0.5pt dashed #666 !important;
+    }
+
+    .print-row {
+        display: flex !important;
+        visibility: visible !important;
+        margin-bottom: 1mm !important;
+        background: white !important;
+    }
+
+    .print-label,
+    .print-colon,
+    .print-value,
+    .print-credentials-value {
+        display: inline !important;
+        visibility: visible !important;
+        color: black !important;
+        background: white !important;
+    }
+
+    .print-label {
+        width: 14mm !important;
+    }
+
+    .print-colon {
+        width: 4mm !important;
+        text-align: center !important;
+    }
+
+    .print-value,
+    .print-credentials-value {
+        flex: 1 !important;
+        font-weight: bold !important;
+    }
+
+    .print-credentials-value {
+        font-family: 'Courier New', monospace !important;
+    }
+}

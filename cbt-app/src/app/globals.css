@@ -539,3 +539,5 @@ body {
 nextjs-portal {
   display: none !important;
 }
+
+/* Print styles moved to /admin/print-login/print.css */

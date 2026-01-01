@@ -29,6 +29,15 @@ export interface User {
     exam_duration?: number;
 }
 
+// User data for print login cards (includes password)
+export interface UserForPrint {
+    id_siswa: string;
+    username: string;
+    password: string;
+    nama_lengkap: string;
+    kelas: string;
+}
+
 // Question types
 export type QuestionType = 'SINGLE' | 'COMPLEX' | 'TRUE_FALSE_MULTI';
 

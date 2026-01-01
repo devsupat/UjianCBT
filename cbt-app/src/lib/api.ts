@@ -1,6 +1,7 @@
 import type {
     ApiResponse,
     User,
+    UserForPrint,
     Question,
     LiveScoreEntry,
     LiveScoreStats,
@@ -98,6 +99,10 @@ export async function getLiveScore(): Promise<ApiResponse<LiveScoreEntry[]> & { 
 
 export async function getUsers(): Promise<ApiResponse<User[]>> {
     return fetchApi<User[]>('getUsers');
+}
+
+export async function getUsersForPrint(): Promise<ApiResponse<UserForPrint[]>> {
+    return fetchApi<UserForPrint[]>('getUsersForPrint');
 }
 
 export async function resetUserLogin(id_siswa: string): Promise<ApiResponse> {

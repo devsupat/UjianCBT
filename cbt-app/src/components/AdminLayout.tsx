@@ -12,7 +12,8 @@ import {
     Shield,
     Menu,
     X,
-    UserCircle
+    UserCircle,
+    Printer
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -26,6 +27,7 @@ interface AdminLayoutProps {
 const navItems = [
     { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard', color: 'from-blue-500 to-blue-600' },
     { href: '/admin/questions', icon: FileQuestion, label: 'Kelola Soal', color: 'from-emerald-500 to-emerald-600' },
+    { href: '/admin/print-login', icon: Printer, label: 'Cetak Kartu', color: 'from-violet-500 to-violet-600' },
     { href: '/admin/config', icon: Settings, label: 'Pengaturan', color: 'from-amber-500 to-amber-600' },
     { href: '/live-score', icon: Activity, label: 'Live Score', color: 'from-rose-500 to-rose-600' },
 ];

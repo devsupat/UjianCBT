@@ -96,6 +96,9 @@ function doGet(e) {
       case "getExamPinStatus":
         result = handleGetExamPinStatus();
         break;
+      case "getUsersForPrint":
+        result = handleGetUsersForPrint();
+        break;
       default:
         result = { success: false, message: "Unknown action" };
     }
@@ -409,6 +412,31 @@ function handleGetUsers(params) {
       violation_count: row[9] || 0,
       status_ujian: row[10] || "BELUM",
       last_seen: row[11] ? new Date(row[11]).toLocaleString("id-ID") : null
+    });
+  }
+  
+  return { success: true, data: users };
+}
+
+/**
+ * Get users WITH password for admin print login cards
+ * This is an admin-only feature for printing student credentials
+ */
+function handleGetUsersForPrint() {
+  const sheet = getSheet("Users");
+  const data = sheet.getDataRange().getValues();
+  const users = [];
+  
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    if (!row[0]) continue;
+    
+    users.push({
+      id_siswa: row[0],
+      username: row[1],
+      password: row[2],  // Include password for print cards
+      nama_lengkap: row[3],
+      kelas: row[4]
     });
   }
   
