@@ -418,3 +418,151 @@ export async function resetStudentExam(studentId: string) {
 
     return { success: true }
 }
+
+/**
+ * Helper: Normalize packet name for case-insensitive matching
+ * Maps: "Paket A" -> "paket_a", "Paket1" -> "paket1"
+ */
+function normalizePacketName(packetName: string | undefined): string {
+    if (!packetName) return ''
+
+    // Convert to lowercase and replace spaces with underscores
+    const normalized = packetName.toLowerCase().replace(/\s+/g, '_')
+
+    // Extract letter/number for mapping
+    // "paket_a" or "paket_1" or "paket1" -> keep as is
+    return normalized
+}
+
+/**
+ * Exam Config: Fetch school's exam_config
+ */
+export async function getSchoolConfig(): Promise<{
+    paket_a: boolean
+    paket_b: boolean
+    paket_c: boolean
+}> {
+    const supabase = getSupabase()
+
+    // Get current user's school
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        throw new Error('Not authenticated')
+    }
+
+    // Get profile to find school_id
+    const { data: profile } = await (supabase
+        .from('profiles') as any)
+        .select('school_id')
+        .eq('id', user.id)
+        .single()
+
+    if (!profile?.school_id) {
+        throw new Error('School not found')
+    }
+
+    // Fetch school's exam_config
+    const { data: school, error } = await (supabase
+        .from('schools') as any)
+        .select('exam_config')
+        .eq('school_id', profile.school_id)
+        .single()
+
+    if (error) {
+        console.error('Error fetching school config:', error)
+        throw new Error('Gagal mengambil konfigurasi ujian')
+    }
+
+    // FAIL-SAFE: If exam_config is NULL, return all false
+    const config = school?.exam_config || {
+        paket_a: false,
+        paket_b: false,
+        paket_c: false
+    }
+
+    return config
+}
+
+/**
+ * Exam Config: Update specific packet toggle
+ */
+export async function updateSchoolConfig(
+    packetKey: 'paket_a' | 'paket_b' | 'paket_c',
+    enabled: boolean
+): Promise<{ success: boolean }> {
+    const supabase = getSupabase()
+
+    // Get current user's school
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        throw new Error('Not authenticated')
+    }
+
+    // Get profile to find school_id
+    const { data: profile } = await (supabase
+        .from('profiles') as any)
+        .select('school_id, role')
+        .eq('id', user.id)
+        .single()
+
+    if (!profile?.school_id || profile.role !== 'ADMIN') {
+        throw new Error('Unauthorized')
+    }
+
+    // Get current config
+    const currentConfig = await getSchoolConfig()
+
+    // Update the specific packet
+    const newConfig = {
+        ...currentConfig,
+        [packetKey]: enabled
+    }
+
+    // Update database
+    const { error } = await (supabase
+        .from('schools') as any)
+        .update({ exam_config: newConfig })
+        .eq('school_id', profile.school_id)
+
+    if (error) {
+        console.error('Error updating exam config:', error)
+        throw new Error('Gagal menyimpan konfigurasi')
+    }
+
+    return { success: true }
+}
+
+/**
+ * Exam Config: Check if a packet is enabled
+ * Used in login flow and fetchQuestions
+ */
+export async function isPacketEnabled(packetName: string): Promise<boolean> {
+    try {
+        const config = await getSchoolConfig()
+        const normalized = normalizePacketName(packetName)
+
+        // Map normalized name to config key
+        // "paket_a" -> config.paket_a
+        // "paket_1" -> treat as paket_a (for backward compatibility)
+        let key: keyof typeof config
+
+        if (normalized.includes('a') || normalized.includes('1')) {
+            key = 'paket_a'
+        } else if (normalized.includes('b') || normalized.includes('2')) {
+            key = 'paket_b'
+        } else if (normalized.includes('c') || normalized.includes('3')) {
+            key = 'paket_c'
+        } else {
+            // Unknown packet, default to closed for safety
+            return false
+        }
+
+        return config[key] || false
+    } catch (error) {
+        console.error('Error checking packet status:', error)
+        // FAIL-SAFE: if error, assume closed
+        return false
+    }
+}
