@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import { LogIn, User, KeyRound, AlertCircle, Loader2, ArrowLeft, Shield, Sparkles, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { login } from '@/lib/api';
+import { loginWithUsername } from '@/lib/auth'; // NEW: Supabase Auth
 import { useExamStore } from '@/store/examStore';
 
 export default function LoginPage() {
@@ -32,7 +32,8 @@ export default function LoginPage() {
         setIsLoading(true);
 
         try {
-            const response = await login(username.trim(), password);
+            // NEW: Use Supabase Auth login
+            const response = await loginWithUsername(username.trim(), password);
 
             if (response.success && response.data) {
                 setUser(response.data);
@@ -40,24 +41,14 @@ export default function LoginPage() {
                 setTimeRemaining(durationMinutes * 60);
                 setIsExamStarted(true);
 
-                // Check if PIN is required
-                const { getExamPinStatus } = await import('@/lib/api');
-                const pinStatus = await getExamPinStatus();
-
-                // isPinRequired is at top level of response, not inside data
-                const isPinRequired = pinStatus.data?.isPinRequired || (pinStatus as unknown as { isPinRequired?: boolean }).isPinRequired;
-
-                if (pinStatus.success && isPinRequired) {
-                    // PIN required - go to PIN verification page
-                    router.push('/pin-verify');
-                } else {
-                    // No PIN required - direct to exam (backward compatible)
-                    router.push('/exam');
-                }
+                // Check if PIN is required (TODO: Move to config table)
+                // For now, skip PIN verification and go directly to exam
+                router.push('/exam');
             } else {
                 setError(response.message || 'Login gagal');
             }
-        } catch {
+        } catch (err) {
+            console.error('Login error:', err);
             setError('Terjadi kesalahan. Coba lagi.');
         } finally {
             setIsLoading(false);

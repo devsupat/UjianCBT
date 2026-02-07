@@ -126,7 +126,7 @@ export default function LiveScorePage() {
                         kelas: user.kelas,
                         skor: user.skor_akhir || 0,
                         status: user.status_ujian,
-                        waktu_selesai: user.waktu_selesai,
+                        waktu_selesai: user.waktu_selesai || undefined,
                         isLive: user.status_ujian === 'SEDANG',
                     });
                     addedNames.add(user.nama_lengkap);

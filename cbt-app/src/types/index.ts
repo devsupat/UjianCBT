@@ -2,6 +2,30 @@
 // Type Definitions for CBT Application
 // =====================================
 
+// Re-export database types for convenience
+export type {
+    QuestionOptions,
+    AnswerConfig,
+    SingleAnswerConfig,
+    ComplexAnswerConfig,
+    TrueFalseMultiAnswerConfig,
+    Tables,
+    InsertTables,
+    UpdateTables
+} from './database';
+
+// =====================================
+// Multi-Tenant Base Types
+// =====================================
+
+/**
+ * Base interface for all multi-tenant entities
+ * Every entity that belongs to a school should extend this
+ */
+export interface MultiTenantEntity {
+    school_id: string;
+}
+
 // Config types
 export interface ExamConfig {
     exam_name: string;
@@ -14,18 +38,18 @@ export interface ExamConfig {
 }
 
 // User types
-export interface User {
+export interface User extends Partial<MultiTenantEntity> {
     id_siswa: string;
     username: string;
     nama_lengkap: string;
     kelas: string;
     status_login?: boolean;
-    waktu_mulai?: string;
-    waktu_selesai?: string;
-    skor_akhir?: number;
-    violation_count?: number;
-    status_ujian: 'BELUM' | 'SEDANG' | 'SELESAI' | 'DISKUALIFIKASI';
-    last_seen?: string;
+    waktu_mulai?: string | null;
+    waktu_selesai?: string | null;
+    skor_akhir?: number | null;
+    violation_count?: number | null;
+    status_ujian?: 'BELUM' | 'SEDANG' | 'SELESAI' | 'DISKUALIFIKASI';
+    last_seen?: string | null;
     exam_duration?: number;
 }
 
@@ -41,19 +65,32 @@ export interface UserForPrint {
 // Question types
 export type QuestionType = 'SINGLE' | 'COMPLEX' | 'TRUE_FALSE_MULTI';
 
-export interface Question {
+/**
+ * Question interface with multi-tenant support
+ * Maintains backward compatibility with id_soal field
+ */
+export interface Question extends Partial<MultiTenantEntity> {
+    // New Supabase fields
+    id?: string;
+
+    // Legacy fields for backward compatibility
     id_soal: string;
     nomor_urut: number;
     tipe: QuestionType;
     pertanyaan: string;
     gambar_url?: string | null;
+
+    // Legacy option fields (for backward compatibility with GAS)
     opsi_a: string;
     opsi_b: string;
     opsi_c: string;
     opsi_d: string;
     opsi_e?: string | null;
+
     bobot: number;
     kategori?: string | null;
+    paket?: string;
+
     // TRUE_FALSE_MULTI specific fields (optional)
     statements_json?: string[] | null;
     answer_json?: boolean[] | null;

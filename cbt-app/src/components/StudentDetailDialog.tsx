@@ -38,7 +38,7 @@ export default function StudentDetailDialog({
 }: StudentDetailDialogProps) {
     if (!user) return null;
 
-    const getStatusBadge = (status: string | null) => {
+    const getStatusBadge = (status: string | null | undefined) => {
         switch (status) {
             case 'SEDANG':
                 return (
@@ -122,7 +122,7 @@ export default function StudentDetailDialog({
                     </div>
 
                     {/* Score Section */}
-                    {user.skor_akhir !== undefined && (
+                    {user.skor_akhir !== undefined && user.skor_akhir !== null && (
                         <div className="p-6 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200">
                             <div className="flex items-center justify-between">
                                 <div>

@@ -507,8 +507,8 @@ export default function AdminDashboard() {
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4 text-center">
-                                                        {user.skor_akhir !== undefined ? (
-                                                            <span className={`text-lg font-bold ${user.skor_akhir >= 70 ? 'text-emerald-600' : 'text-slate-700'
+                                                        {user.skor_akhir !== undefined && user.skor_akhir !== null ? (
+                                                            <span className={`text-lg font-bold ${(user.skor_akhir || 0) >= 70 ? 'text-emerald-600' : 'text-slate-700'
                                                                 }`}>
                                                                 {user.skor_akhir}
                                                             </span>
