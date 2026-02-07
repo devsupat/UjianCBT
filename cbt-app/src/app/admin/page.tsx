@@ -3,14 +3,15 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Shield, Lock, AlertCircle, Loader2 } from 'lucide-react';
+import { Shield, Lock, AlertCircle, Loader2, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { adminLogin } from '@/lib/api';
+import { signInWithPassword } from '@/lib/auth';
 
 export default function AdminLoginPage() {
     const router = useRouter();
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -18,6 +19,11 @@ export default function AdminLoginPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+
+        if (!email.trim()) {
+            setError('Email harus diisi');
+            return;
+        }
 
         if (!password.trim()) {
             setError('Password harus diisi');
@@ -27,17 +33,27 @@ export default function AdminLoginPage() {
         setIsLoading(true);
 
         try {
-            const response = await adminLogin(password);
+            const { user, profile, error: authError } = await signInWithPassword(email, password);
 
-            if (response.success) {
-                sessionStorage.setItem('admin_auth', 'true');
-                router.push('/admin/dashboard');
-            } else {
-                setError(response.message || 'Login gagal');
+            if (authError || !user) {
+                setError(authError || 'Login gagal. Periksa email dan password Anda.');
+                setIsLoading(false);
+                return;
             }
-        } catch {
+
+            // Verify admin role
+            if (profile?.role !== 'ADMIN') {
+                setError('Akses ditolak. Hanya admin yang dapat login di halaman ini.');
+                setIsLoading(false);
+                return;
+            }
+
+            // Success - redirect to dashboard
+            router.push('/admin/dashboard');
+            router.refresh();
+        } catch (err) {
+            console.error('Login error:', err);
             setError('Terjadi kesalahan. Coba lagi.');
-        } finally {
             setIsLoading(false);
         }
     };
@@ -70,7 +86,7 @@ export default function AdminLoginPage() {
                                 Admin Dashboard
                             </CardTitle>
                             <CardDescription className="mt-2">
-                                Masukkan password administrator
+                                Masukkan email dan password administrator
                             </CardDescription>
                         </div>
                     </CardHeader>
@@ -87,6 +103,21 @@ export default function AdminLoginPage() {
                                     <span>{error}</span>
                                 </motion.div>
                             )}
+
+                            <div className="space-y-2">
+                                <label className="text-sm text-slate-600 flex items-center gap-2">
+                                    <Mail className="w-4 h-4" />
+                                    Email Admin
+                                </label>
+                                <Input
+                                    type="email"
+                                    placeholder="admin@xxx.cbt.internal"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    disabled={isLoading}
+                                    autoComplete="username"
+                                />
+                            </div>
 
                             <div className="space-y-2">
                                 <label className="text-sm text-slate-600 flex items-center gap-2">

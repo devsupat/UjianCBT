@@ -68,9 +68,13 @@ export async function middleware(request: NextRequest) {
         }
     }
 
-    // Protect admin routes
-    if (request.nextUrl.pathname.startsWith('/admin')) {
+    // Protect admin routes (except login page /admin itself)
+    const isAdminLoginPage = request.nextUrl.pathname === '/admin'
+    const isProtectedAdminRoute = request.nextUrl.pathname.startsWith('/admin/') && !isAdminLoginPage
+
+    if (isProtectedAdminRoute) {
         if (!user) {
+            // Redirect to admin login page
             const url = request.nextUrl.clone()
             url.pathname = '/admin'
             return NextResponse.redirect(url)

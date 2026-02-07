@@ -104,6 +104,64 @@ export async function loginWithUsername(
 }
 
 /**
+ * Sign in with email and password directly (for admin login)
+ */
+export async function signInWithPassword(
+    email: string,
+    password: string
+): Promise<{
+    user: SupabaseUser | null
+    profile: any | null
+    error: string | null
+}> {
+    const supabase = getSupabase()
+
+    try {
+        // Authenticate with Supabase
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+            email,
+            password
+        })
+
+        if (authError || !authData.user) {
+            return {
+                user: null,
+                profile: null,
+                error: authError?.message || 'Login gagal'
+            }
+        }
+
+        // Get user profile
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', authData.user.id)
+            .single()
+
+        if (profileError || !profile) {
+            return {
+                user: authData.user,
+                profile: null,
+                error: 'Profil tidak ditemukan'
+            }
+        }
+
+        return {
+            user: authData.user,
+            profile,
+            error: null
+        }
+    } catch (error) {
+        console.error('SignIn error:', error)
+        return {
+            user: null,
+            profile: null,
+            error: 'Terjadi kesalahan sistem'
+        }
+    }
+}
+
+/**
  * Get current session
  */
 export async function getSession() {
