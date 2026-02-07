@@ -73,21 +73,28 @@ export async function middleware(request: NextRequest) {
     const isProtectedAdminRoute = request.nextUrl.pathname.startsWith('/admin/') && !isAdminLoginPage
 
     if (isProtectedAdminRoute) {
+        console.log('🔒 Middleware: Protecting admin route:', request.nextUrl.pathname);
+        console.log('👤 User found:', !!user);
+
         if (!user) {
             // Redirect to admin login page
+            console.log('❌ No user, redirecting to /admin');
             const url = request.nextUrl.clone()
             url.pathname = '/admin'
             return NextResponse.redirect(url)
         }
 
         // Check if user is admin AND school has valid license
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('role, school_id, schools!inner(license_status)')
             .eq('id', user.id)
             .single()
 
-        if (profile?.role !== 'ADMIN') {
+        console.log('📊 Profile query result:', { profile, profileError });
+
+        if (!profile || profile?.role !== 'ADMIN') {
+            console.log('❌ Not admin, redirecting to /');
             const url = request.nextUrl.clone()
             url.pathname = '/'
             return NextResponse.redirect(url)
@@ -95,11 +102,16 @@ export async function middleware(request: NextRequest) {
 
         // Check license status for admin (Anti-Kabur)
         const licenseStatus = (profile as any)?.schools?.license_status
+        console.log('🔑 License status:', licenseStatus);
+
         if (licenseStatus === false) {
+            console.log('❌ License expired, redirecting to /license-expired');
             const url = request.nextUrl.clone()
             url.pathname = '/license-expired'
             return NextResponse.redirect(url)
         }
+
+        console.log('✅ Admin access granted');
     }
 
     return supabaseResponse

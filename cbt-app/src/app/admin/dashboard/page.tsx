@@ -40,7 +40,8 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import StudentDetailDialog from '@/components/StudentDetailDialog';
-import { getUsers, resetUserLogin, exportResults, setExamPin, getExamPinStatus, resetTodayExam } from '@/lib/api';
+import { resetUserLogin, exportResults, setExamPin, getExamPinStatus, resetTodayExam } from '@/lib/api';
+import { fetchStudentProfiles, resetStudentExam } from '@/lib/queries';
 import type { User } from '@/types';
 
 type SortField = 'name' | 'class' | 'status' | 'score';
@@ -69,13 +70,12 @@ export default function AdminDashboard() {
     const [resetPassword, setResetPassword] = useState('');
     const [isResetting, setIsResetting] = useState(false);
 
-    const { data, isLoading, mutate } = useSWR<{ success: boolean; data?: User[] }>(
-        'adminUsers',
-        getUsers,
+    // Use Supabase query instead of legacy API
+    const { data: users = [], isLoading, mutate } = useSWR<User[]>(
+        'studentProfiles',
+        fetchStudentProfiles,
         { refreshInterval: 5000 }
     );
-
-    const users = data?.data || [];
 
     // Debounce search
     useEffect(() => {

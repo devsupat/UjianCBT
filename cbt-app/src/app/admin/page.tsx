@@ -31,9 +31,12 @@ export default function AdminLoginPage() {
         }
 
         setIsLoading(true);
+        console.log('🔐 Attempting login with:', email);
 
         try {
             const { user, profile, error: authError } = await signInWithPassword(email, password);
+
+            console.log('📊 Auth result:', { user: !!user, profile, authError });
 
             if (authError || !user) {
                 setError(authError || 'Login gagal. Periksa email dan password Anda.');
@@ -42,6 +45,7 @@ export default function AdminLoginPage() {
             }
 
             // Verify admin role
+            console.log('👤 Profile role:', profile?.role);
             if (profile?.role !== 'ADMIN') {
                 setError('Akses ditolak. Hanya admin yang dapat login di halaman ini.');
                 setIsLoading(false);
@@ -49,10 +53,11 @@ export default function AdminLoginPage() {
             }
 
             // Success - redirect to dashboard
-            router.push('/admin/dashboard');
-            router.refresh();
+            console.log('✅ Login successful, redirecting...');
+            // Use window.location to ensure session cookies are included
+            window.location.href = '/admin/dashboard';
         } catch (err) {
-            console.error('Login error:', err);
+            console.error('❌ Login error:', err);
             setError('Terjadi kesalahan. Coba lagi.');
             setIsLoading(false);
         }

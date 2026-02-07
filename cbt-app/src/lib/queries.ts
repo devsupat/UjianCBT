@@ -361,3 +361,60 @@ export async function bulkInsertQuestions(
         }
     }
 }
+
+/**
+ * Admin Dashboard: Fetch all student profiles for monitoring
+ * RLS filters by admin's school_id automatically
+ */
+export async function fetchStudentProfiles() {
+    const supabase = getSupabase()
+
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, class_group, role, status_ujian, waktu_mulai, skor_akhir, last_seen')
+        .eq('role', 'STUDENT')
+        .order('full_name', { ascending: true })
+
+    if (error) {
+        console.error('Error fetching students:', error)
+        throw new Error('Gagal mengambil data siswa')
+    }
+
+    // Transform to match legacy User type
+    // Type assertion needed: database types don't include these fields yet
+    return (data as any[] || []).map((profile: any) => ({
+        id_siswa: profile.id,
+        username: profile.full_name.toLowerCase().replace(/\s+/g, ''), // Generate from name
+        nama_lengkap: profile.full_name,
+        kelas: profile.class_group || '',
+        status_ujian: profile.status_ujian || 'BELUM',
+        waktu_mulai: profile.waktu_mulai || null,
+        skor_akhir: profile.skor_akhir || null,
+        status_login: false, // TODO: implement session tracking
+        last_seen: profile.last_seen || null,
+        exam_duration: 90 // TODO: get from config
+    }))
+}
+
+/**
+ * Admin: Reset student's exam status
+ */
+export async function resetStudentExam(studentId: string) {
+    const supabase = getSupabase()
+
+    const { error } = await (supabase
+        .from('profiles') as any)
+        .update({
+            status_ujian: 'BELUM',
+            waktu_mulai: null,
+            skor_akhir: null
+        })
+        .eq('id', studentId)
+
+    if (error) {
+        console.error('Error resetting student:', error)
+        throw new Error('Gagal mereset ujian siswa')
+    }
+
+    return { success: true }
+}

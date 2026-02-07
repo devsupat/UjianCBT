@@ -37,13 +37,6 @@ export default function AdminLayout({ children, title, subtitle, headerActions }
     const pathname = usePathname();
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
-    useEffect(() => {
-        const auth = sessionStorage.getItem('admin_auth');
-        if (auth !== 'true') {
-            router.replace('/admin');
-        }
-    }, [router]);
-
     // Auto-collapse sidebar on mobile
     useEffect(() => {
         const handleResize = () => {
@@ -57,7 +50,6 @@ export default function AdminLayout({ children, title, subtitle, headerActions }
     }, []);
 
     const handleLogout = () => {
-        sessionStorage.removeItem('admin_auth');
         router.push('/admin');
     };
 
