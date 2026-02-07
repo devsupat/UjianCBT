@@ -21,7 +21,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { getQuestions, createQuestion, updateQuestion, deleteQuestion } from '@/lib/api';
+import { createQuestion, updateQuestion, deleteQuestion } from '@/lib/api';
+import { fetchQuestions } from '@/lib/queries';
 import type { Question } from '@/types';
 import { truncate } from '@/lib/utils';
 import TrueFalseMultiEditor from '@/components/TrueFalseMultiEditor';
@@ -66,12 +67,11 @@ export default function QuestionsManagement() {
         { value: 'Paket5', label: 'Paket 5' },
     ];
 
-    const { data, isLoading, mutate } = useSWR<{ success: boolean; data?: Question[] }>(
+    // Use Supabase query instead of legacy API
+    const { data: questions = [], isLoading, mutate } = useSWR<Question[]>(
         'adminQuestions',
-        getQuestions
+        fetchQuestions
     );
-
-    const questions = data?.data || [];
 
     const resetForm = () => {
         setFormData({

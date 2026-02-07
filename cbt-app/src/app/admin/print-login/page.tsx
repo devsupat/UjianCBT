@@ -20,7 +20,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { getUsersForPrint, getConfig } from '@/lib/api';
+import { getConfig } from '@/lib/api';
+import { fetchStudentProfiles } from '@/lib/queries';
 import type { UserForPrint, ExamConfig } from '@/types';
 
 export default function PrintLoginPage() {
@@ -28,9 +29,17 @@ export default function PrintLoginPage() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isRefreshing, setIsRefreshing] = useState(false);
 
-    const { data: usersData, isLoading, mutate } = useSWR<{ success: boolean; data?: UserForPrint[] }>(
+    // Use Supabase query for student profiles
+    const { data: users = [], isLoading, mutate } = useSWR(
         'usersForPrint',
-        getUsersForPrint
+        async () => {
+            const profiles = await fetchStudentProfiles();
+            // Transform to UserForPrint format (add password field)
+            return profiles.map(p => ({
+                ...p,
+                password: 'default123' // TODO: generate or fetch from auth
+            }));
+        }
     );
 
     const { data: configData } = useSWR<{ success: boolean; data?: ExamConfig }>(
@@ -38,7 +47,6 @@ export default function PrintLoginPage() {
         getConfig
     );
 
-    const users = usersData?.data || [];
     const examName = configData?.data?.exam_name || 'UJIAN';
 
     const uniqueClasses = useMemo(() => {
@@ -267,8 +275,8 @@ export default function PrintLoginPage() {
                                             key={user.id_siswa}
                                             onClick={() => toggleSelect(user.id_siswa)}
                                             className={`p-3 rounded-lg border text-left transition-all ${selectedIds.has(user.id_siswa)
-                                                    ? 'border-violet-500 bg-violet-50 ring-2 ring-violet-200'
-                                                    : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                                                ? 'border-violet-500 bg-violet-50 ring-2 ring-violet-200'
+                                                : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                                                 }`}
                                         >
                                             <div className="flex items-center gap-3">
