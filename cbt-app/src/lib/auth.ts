@@ -10,7 +10,7 @@ import { getSupabase } from './supabase'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { User } from '@/types'
 
-const EMAIL_DOMAIN = 'cbt.local' // Internal domain for username mapping
+const EMAIL_DOMAIN = 'cbt.internal' // Internal domain for username mapping
 
 /**
  * Maps username to email format for Supabase Auth

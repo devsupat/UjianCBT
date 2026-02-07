@@ -1,3 +1,18 @@
+/**
+ * @deprecated LEGACY API FILE - DO NOT USE FOR NEW CODE
+ * 
+ * This file contains legacy API calls to Google Apps Script backend.
+ * It is kept for backward compatibility during the migration period.
+ * 
+ * For new code, use:
+ * - Authentication: import { loginWithUsername, getCurrentUser } from '@/lib/auth'
+ * - Questions: import { fetchQuestions, submitExam } from '@/lib/queries'
+ * - Scoring: Use RPC calculate_score via queries.ts
+ * 
+ * TODO: Migrate remaining components and remove this file
+ * See: tasks.md Phase 3 - Auth & API Refactoring
+ */
+
 import type {
     ApiResponse,
     User,

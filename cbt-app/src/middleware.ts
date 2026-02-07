@@ -76,16 +76,24 @@ export async function middleware(request: NextRequest) {
             return NextResponse.redirect(url)
         }
 
-        // Check if user is admin
+        // Check if user is admin AND school has valid license
         const { data: profile } = await supabase
             .from('profiles')
-            .select('role')
+            .select('role, school_id, schools!inner(license_status)')
             .eq('id', user.id)
             .single()
 
         if (profile?.role !== 'ADMIN') {
             const url = request.nextUrl.clone()
             url.pathname = '/'
+            return NextResponse.redirect(url)
+        }
+
+        // Check license status for admin (Anti-Kabur)
+        const licenseStatus = (profile as any)?.schools?.license_status
+        if (licenseStatus === false) {
+            const url = request.nextUrl.clone()
+            url.pathname = '/license-expired'
             return NextResponse.redirect(url)
         }
     }
