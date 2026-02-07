@@ -37,7 +37,7 @@ USING (
     EXISTS (
         SELECT 1 FROM profiles
         WHERE profiles.id = auth.uid()
-        AND profiles.school_id = schools.school_id
+        AND profiles.school_id = schools.id
         AND profiles.role = 'ADMIN'
     )
 )
@@ -46,7 +46,7 @@ WITH CHECK (
     EXISTS (
         SELECT 1 FROM profiles
         WHERE profiles.id = auth.uid()
-        AND profiles.school_id = schools.school_id
+        AND profiles.school_id = schools.id
         AND profiles.role = 'ADMIN'
     )
 );
@@ -67,10 +67,11 @@ BEGIN
             EXISTS (
                 SELECT 1 FROM profiles
                 WHERE profiles.id = auth.uid()
-                AND profiles.school_id = schools.school_id
+                AND profiles.school_id = schools.id
                 AND profiles.role = 'ADMIN'
             )
         );
     END IF;
 END $$;
+
 
