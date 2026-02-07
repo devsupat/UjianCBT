@@ -13,7 +13,8 @@ import {
     Save,
     Image as ImageIcon,
     Check,
-    Package
+    Package,
+    Upload
 } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ import { getQuestions, createQuestion, updateQuestion, deleteQuestion } from '@/
 import type { Question } from '@/types';
 import { truncate } from '@/lib/utils';
 import TrueFalseMultiEditor from '@/components/TrueFalseMultiEditor';
+import QuestionImporter from '@/components/QuestionImporter';
 
 interface QuestionWithKey extends Question {
     kunci_jawaban?: string;
@@ -31,6 +33,7 @@ interface QuestionWithKey extends Question {
 
 export default function QuestionsManagement() {
     const [showModal, setShowModal] = useState(false);
+    const [showImporter, setShowImporter] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState<QuestionWithKey | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
@@ -195,13 +198,23 @@ export default function QuestionsManagement() {
     };
 
     const headerActions = (
-        <Button
-            onClick={() => handleOpenModal()}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/30 border-0"
-        >
-            <Plus className="w-4 h-4 mr-2" />
-            Tambah Soal
-        </Button>
+        <div className="flex items-center gap-3">
+            <Button
+                onClick={() => setShowImporter(true)}
+                variant="outline"
+                className="border-blue-300 text-blue-700 hover:bg-blue-50 shadow-sm"
+            >
+                <Upload className="w-4 h-4 mr-2" />
+                Import Excel
+            </Button>
+            <Button
+                onClick={() => handleOpenModal()}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/30 border-0"
+            >
+                <Plus className="w-4 h-4 mr-2" />
+                Tambah Soal
+            </Button>
+        </div>
     );
 
     return (
@@ -568,6 +581,18 @@ export default function QuestionsManagement() {
                             </form>
                         </motion.div>
                     </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Question Importer Modal */}
+            <AnimatePresence>
+                {showImporter && (
+                    <QuestionImporter
+                        onClose={() => setShowImporter(false)}
+                        onSuccess={() => {
+                            mutate(); // Refresh question list
+                        }}
+                    />
                 )}
             </AnimatePresence>
         </AdminLayout>

@@ -37,6 +37,56 @@ export interface ExamConfig {
     live_score_pin?: string;
 }
 
+// =====================================
+// Phase 5: Admin Features Types
+// =====================================
+
+/**
+ * School/Institution information for multi-tenant branding
+ */
+export interface School {
+    id: string;
+    name: string;
+    logo_url?: string | null;
+    license_status: boolean;
+    license_expiry?: string | null;
+    created_at: string;
+}
+
+/**
+ * Excel import row structure for bulk question upload
+ * Note: Column names should match Excel headers exactly
+ */
+export interface QuestionImportRow {
+    No: number;
+    Pertanyaan: string;
+    Tipe: 'SINGLE' | 'COMPLEX' | 'TRUE_FALSE_MULTI';
+    'Opsi A': string;
+    'Opsi B': string;
+    'Opsi C': string;
+    'Opsi D': string;
+    'Opsi E': string;
+    Kunci: string; // Format: "A" for SINGLE, "A,C" for COMPLEX, "B,S,B" for TRUE_FALSE_MULTI
+    Pernyataan?: string; // For TRUE_FALSE_MULTI: semicolon-separated statements
+    Bobot: number;
+    Kategori?: string;
+    Paket?: string;
+}
+
+/**
+ * Result of bulk import operation
+ */
+export interface BulkImportResult {
+    success: boolean;
+    totalRows: number;
+    successCount: number;
+    failedCount: number;
+    errors: Array<{
+        row: number;
+        error: string;
+    }>;
+}
+
 // User types
 export interface User extends Partial<MultiTenantEntity> {
     id_siswa: string;

@@ -6,7 +6,6 @@
  */
 
 import { getSupabase } from './supabase'
-import { createServerSupabaseClient } from './supabase-server'
 import type { Question, AnswersRecord, ExamConfig } from '@/types'
 import type { Database } from '@/types/database'
 
@@ -17,15 +16,11 @@ type QuestionRow = Database['public']['Tables']['questions']['Row']
  * RLS automatically filters by school_id
  * 
  * @param paket - Optional packet filter (e.g., "Paket1", "Paket2")
- * @param isServer - Use server client (for API routes)
  */
 export async function fetchQuestions(
-    paket?: string,
-    isServer = false
+    paket?: string
 ): Promise<Question[]> {
-    const supabase = isServer
-        ? await createServerSupabaseClient()
-        : getSupabase()
+    const supabase = getSupabase()
 
     let query = supabase
         .from('questions')
@@ -217,5 +212,152 @@ export async function fetchLiveScores() {
     return {
         completed: responses || [],
         active: activeStudents || []
+    }
+}
+
+// =====================================
+// Phase 5: Admin Feature Queries
+// =====================================
+
+/**
+ * Get current user's school information for branding
+ * RLS automatically filters to user's school
+ */
+export async function getSchoolInfo() {
+    const supabase = getSupabase()
+
+    try {
+        // Get current user's profile to find school_id
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new Error('Not authenticated')
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('school_id')
+            .eq('id', user.id)
+            .single()
+
+        const profileData = profile as any
+
+        if (!profileData?.school_id) throw new Error('No school associated')
+
+        // Fetch school data (RLS will ensure user can only see their school)
+        const { data: school, error } = await supabase
+            .from('schools')
+            .select('id, name, logo_url, license_status, license_expiry, created_at')
+            .eq('id', profileData.school_id)
+            .single()
+
+        if (error) throw error
+
+        return school as any
+    } catch (error) {
+        console.error('Error fetching school info:', error)
+        return null
+    }
+}
+
+/**
+ * Bulk insert questions from Excel import
+ * Automatically injects school_id from current user's session
+ * 
+ * @param questions - Array of questions to insert
+ * @returns Import result with success/error details
+ */
+export async function bulkInsertQuestions(
+    questions: Array<{
+        nomor_urut: number
+        tipe: 'SINGLE' | 'COMPLEX' | 'TRUE_FALSE_MULTI'
+        pertanyaan: string
+        gambar_url?: string
+        options: Record<string, string>
+        correct_answer_config: any
+        bobot: number
+        kategori?: string
+        paket?: string
+    }>
+) {
+    const supabase = getSupabase()
+
+    try {
+        // Get current user and their school_id
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            return {
+                success: false,
+                totalRows: questions.length,
+                successCount: 0,
+                failedCount: questions.length,
+                errors: [{ row: 0, error: 'Not authenticated' }]
+            }
+        }
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('school_id, role')
+            .eq('id', user.id)
+            .single()
+
+        const profileData = profile as any
+
+        if (!profileData?.school_id) {
+            return {
+                success: false,
+                totalRows: questions.length,
+                successCount: 0,
+                failedCount: questions.length,
+                errors: [{ row: 0, error: 'No school associated with user' }]
+            }
+        }
+
+        if (profileData.role !== 'ADMIN') {
+            return {
+                success: false,
+                totalRows: questions.length,
+                successCount: 0,
+                failedCount: questions.length,
+                errors: [{ row: 0, error: 'Only admins can import questions' }]
+            }
+        }
+
+        // Inject school_id into all questions
+        const questionsWithSchool = questions.map(q => ({
+            ...q,
+            school_id: profileData.school_id
+        }))
+
+        // Insert all questions at once
+        const { data, error } = await (supabase as any)
+            .from('questions')
+            .insert(questionsWithSchool)
+            .select()
+
+        if (error) {
+            console.error('Bulk insert error:', error)
+            return {
+                success: false,
+                totalRows: questions.length,
+                successCount: 0,
+                failedCount: questions.length,
+                errors: [{ row: 0, error: error.message }]
+            }
+        }
+
+        return {
+            success: true,
+            totalRows: questions.length,
+            successCount: data?.length || 0,
+            failedCount: 0,
+            errors: []
+        }
+    } catch (error: any) {
+        console.error('Bulk insert exception:', error)
+        return {
+            success: false,
+            totalRows: questions.length,
+            successCount: 0,
+            failedCount: questions.length,
+            errors: [{ row: 0, error: error.message || 'Unknown error' }]
+        }
     }
 }
