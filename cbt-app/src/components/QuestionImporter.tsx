@@ -49,12 +49,30 @@ export default function QuestionImporter({ onClose, onSuccess }: QuestionImporte
         try {
             const buffer = await file.arrayBuffer();
             const workbook = XLSX.read(buffer, { type: 'array' });
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
+
+            // Prefer DATA_SOAL sheet, fallback to first sheet
+            const dataSheetName = workbook.SheetNames.find(name =>
+                name.toUpperCase() === 'DATA_SOAL'
+            ) || workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[dataSheetName];
 
             // Convert to JSON with header row
-            const jsonData: QuestionImportRow[] = XLSX.utils.sheet_to_json(worksheet, {
+            const rawData: Record<string, any>[] = XLSX.utils.sheet_to_json(worksheet, {
                 defval: ''
+            });
+
+            // Normalize column names (handle case variations like 'kategori' vs 'Kategori')
+            const jsonData: QuestionImportRow[] = rawData.map(row => {
+                const normalized: any = {};
+                Object.keys(row).forEach(key => {
+                    // Map common variations
+                    if (key.toLowerCase() === 'kategori') {
+                        normalized['Kategori'] = row[key];
+                    } else {
+                        normalized[key] = row[key];
+                    }
+                });
+                return normalized as QuestionImportRow;
             });
 
             // Validate and show preview
@@ -253,14 +271,24 @@ export default function QuestionImporter({ onClose, onSuccess }: QuestionImporte
                             <p className="text-blue-100 text-sm">Upload file Excel untuk import soal massal</p>
                         </div>
                     </div>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onClose}
-                        className="text-white hover:bg-white/20 rounded-xl"
-                    >
-                        <X className="w-5 h-5" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <a
+                            href="/templates/template-soal-cbt.xlsx"
+                            download="template-soal-cbt.xlsx"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white text-sm font-medium rounded-xl transition-colors"
+                        >
+                            <Download className="w-4 h-4" />
+                            Unduh Template
+                        </a>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={onClose}
+                            className="text-white hover:bg-white/20 rounded-xl"
+                        >
+                            <X className="w-5 h-5" />
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="p-8 overflow-y-auto max-h-[calc(90vh-120px)]">
