@@ -547,7 +547,7 @@ export async function fetchStudentProfiles() {
 
     const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, class_group, role, status_ujian, waktu_mulai, skor_akhir, last_seen, is_login')
+        .select('id, full_name, username, password_text, class_group, role, status_ujian, waktu_mulai, skor_akhir, last_seen, is_login')
         .eq('role', 'STUDENT')
         .order('full_name', { ascending: true })
 
@@ -572,7 +572,7 @@ export async function fetchStudentProfiles() {
 
         return {
             id_siswa: profile.id,
-            username: profile.full_name.toLowerCase().replace(/\s+/g, ''),
+            username: profile.username || profile.full_name.toLowerCase().replace(/\s+/g, ''),
             nama_lengkap: profile.full_name,
             kelas: profile.class_group || '',
             status_ujian: effectiveStatus,
@@ -581,7 +581,8 @@ export async function fetchStudentProfiles() {
             status_login: isLoggedIn,
             is_login: isLoggedIn, // Also expose raw value
             last_seen: profile.last_seen || null,
-            exam_duration: 90
+            exam_duration: 90,
+            password_text: profile.password_text || null // For login card printing
         }
     })
 }

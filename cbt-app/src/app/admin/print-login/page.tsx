@@ -34,10 +34,11 @@ export default function PrintLoginPage() {
         'usersForPrint',
         async () => {
             const profiles = await fetchStudentProfiles();
-            // Transform to UserForPrint format (add password field)
+            // Transform to UserForPrint format with password_text
             return profiles.map(p => ({
                 ...p,
-                password: 'default123' // TODO: generate or fetch from auth
+                // Use password_text from profile, or show placeholder for old users
+                password: (p as any).password_text || 'Reset diperlukan'
             }));
         }
     );

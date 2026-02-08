@@ -170,6 +170,7 @@ export async function createStudent(data: CreateStudentInput): Promise<ActionRes
                 school_id: schoolId,
                 full_name: data.fullName.trim(),
                 username: data.username.toLowerCase().trim(),
+                password_text: data.password, // Store plain password for login card printing
                 role: 'STUDENT',
                 class_group: data.classGroup.trim(),
                 status_ujian: 'BELUM'
@@ -377,6 +378,7 @@ export async function updateStudent(
 
         // Update password if provided
         if (data.password?.trim()) {
+            // Update auth password
             const { error: passwordError } = await supabaseAdmin.auth.admin.updateUserById(
                 studentId,
                 { password: data.password.trim() }
@@ -386,6 +388,11 @@ export async function updateStudent(
                 console.error('Error updating password:', passwordError);
                 return { success: false, message: 'Gagal mengubah password.' };
             }
+
+            // Also update password_text for login card printing
+            await (supabaseAdmin.from('profiles') as any)
+                .update({ password_text: data.password.trim() })
+                .eq('id', studentId);
         }
 
         return {
