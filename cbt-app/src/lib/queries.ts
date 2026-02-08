@@ -729,7 +729,7 @@ export async function getSchoolConfig(): Promise<{
     const { data: school, error } = await (supabase
         .from('schools') as any)
         .select('exam_config')
-        .eq('school_id', profile.school_id)
+        .eq('id', profile.school_id)
         .single()
 
     if (error) {
