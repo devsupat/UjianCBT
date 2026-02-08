@@ -44,12 +44,28 @@ export async function fetchQuestions(
         return [];
     }
 
-    console.log('🔍 Fetching questions via RPC for school_id:', schoolId);
+    // SECURITY: Get student's packet (required for strict isolation)
+    // EXCEPTION: ADMIN users can see ALL questions (no packet filter)
+    const userRole = (profile as any)?.role;
+    let studentPacket = paket;
 
-    // Use RPC function to bypass RLS issues
-    // This function uses SECURITY DEFINER to reliably fetch data
+    // ADMIN bypasses packet filter - can see all questions in bank soal
+    if (userRole === 'ADMIN') {
+        studentPacket = undefined; // No filter for admin
+        console.log('👑 ADMIN detected - showing all questions');
+    } else if (!studentPacket && typeof window !== 'undefined') {
+        studentPacket = sessionStorage.getItem('exam_packet') || undefined;
+    }
+
+    console.log('🔍 Fetching questions via RPC for school_id:', schoolId, 'packet:', studentPacket);
+
+    // SECURITY FIX: Pass packet parameter to RPC for strict isolation
+    // If no packet, RPC returns empty (never returns all questions)
     const { data, error } = await (supabase as any)
-        .rpc('get_school_questions', { p_school_id: schoolId });
+        .rpc('get_school_questions', {
+            p_school_id: schoolId,
+            p_paket: studentPacket || null  // RPC returns empty if null
+        });
 
     console.log('🔍 RPC response - count:', data?.length, 'error:', error);
 
@@ -57,27 +73,23 @@ export async function fetchQuestions(
         console.error('❌ RPC Fetch error:', error);
         // Fallback to direct query if RPC doesn't exist
         console.log('⚠️ Falling back to direct query...');
-        return await fetchQuestionsDirectQuery(schoolId, paket);
+        return await fetchQuestionsDirectQuery(schoolId, studentPacket);
     }
 
     if (!data || data.length === 0) {
-        console.warn('⚠️ NO DATA from RPC, trying direct query...');
-        return await fetchQuestionsDirectQuery(schoolId, paket);
+        console.warn('⚠️ NO DATA from RPC - packet may be empty or invalid');
+        // Try fallback with forced packet filter
+        return await fetchQuestionsDirectQuery(schoolId, studentPacket);
     }
 
     console.log('✅ Data retrieved via RPC:', data.length, 'questions');
     console.log('🔍 First raw question from RPC:', JSON.stringify(data[0], null, 2));
 
-    // Filter by packet if specified
-    let filtered = data;
-    if (paket) {
-        filtered = data.filter((q: any) => q.paket === paket);
-        console.log('🔍 After paket filter:', filtered.length);
-    }
+    // No need for client-side filter - RPC already filtered by packet
 
     // Transform to legacy format with try-catch
     try {
-        const transformed = (filtered || []).map((q: any) => {
+        const transformed = (data || []).map((q: any) => {
             const options = q.options || {};
             const config = q.correct_answer_config || {};
             return {
@@ -97,7 +109,7 @@ export async function fetchQuestions(
                 kategori: q.kategori || '',
                 paket: q.paket || undefined,
                 statements_json: config.type === 'TRUE_FALSE_MULTI' ? config.statements : null,
-                answer_json: config.type === 'TRUE_FALSE_MULTI' ? config.answers : null
+                // SECURITY: answer_json is NOT sent to client - answers are only on server
             };
         });
         console.log('🔍 Transformed questions:', transformed.length);
@@ -106,7 +118,7 @@ export async function fetchQuestions(
     } catch (err) {
         console.error('❌ Transform error:', err);
         // Return raw data as fallback
-        return filtered;
+        return data;
     }
 }
 
@@ -166,7 +178,7 @@ function transformQuestionToLegacy(q: QuestionRow): Question {
         paket: q.paket || undefined,
         // TRUE_FALSE_MULTI fields
         statements_json: config.type === 'TRUE_FALSE_MULTI' ? config.statements : null,
-        answer_json: config.type === 'TRUE_FALSE_MULTI' ? config.answers : null
+        // SECURITY: answer_json is NOT sent to client - answers are only on server
     }
 }
 

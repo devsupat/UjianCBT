@@ -89,6 +89,72 @@ export default function ExamPage() {
         }
     }, [user, isExamStarted, router]);
 
+    // ===========================================
+    // SECURITY FIX: Server-Time Based Timer Sync
+    // ===========================================
+    // On page load/refresh, calculate remaining time from waktu_mulai (server)
+    // If time expired, IMMEDIATELY auto-submit - no chance to cheat
+    const hasAutoSubmittedRef = useRef(false);
+
+    useEffect(() => {
+        async function syncTimerFromServer() {
+            if (!user || hasAutoSubmittedRef.current) return;
+
+            try {
+                const supabase = (await import('@/lib/supabase')).getSupabase();
+                const { data: profileData } = await supabase
+                    .from('profiles')
+                    .select('waktu_mulai, status_ujian')
+                    .eq('id', user.id_siswa)
+                    .single();
+
+                // Type assertion for profile data
+                const profile = profileData as { waktu_mulai: string | null; status_ujian: string | null } | null;
+                if (!profile) return;
+
+                // If already completed, redirect
+                if (profile.status_ujian === 'SELESAI' || profile.status_ujian === 'DISKUALIFIKASI') {
+                    router.replace('/exam/thankyou');
+                    return;
+                }
+
+                if (profile.waktu_mulai) {
+                    const startTime = new Date(profile.waktu_mulai).getTime();
+                    const now = Date.now();
+                    const elapsedSeconds = Math.floor((now - startTime) / 1000);
+                    const examDuration = (user.exam_duration || 90) * 60; // 90 minutes default
+                    const remaining = Math.max(0, examDuration - elapsedSeconds);
+
+                    console.log('⏱️ Server time sync:', {
+                        startTime: new Date(startTime).toISOString(),
+                        elapsed: elapsedSeconds,
+                        remaining,
+                        examDuration
+                    });
+
+                    // SECURITY: If time already expired, FORCE submit immediately
+                    if (remaining <= 0) {
+                        console.log('🚨 TIME EXPIRED on load - forcing auto-submit');
+                        hasAutoSubmittedRef.current = true;
+                        // Force submit exam
+                        handleSubmit(true);
+                        return;
+                    }
+
+                    // Set remaining time from server calculation
+                    const { setTimeRemaining } = useExamStore.getState();
+                    setTimeRemaining(remaining);
+                }
+            } catch (error) {
+                console.error('Timer sync error:', error);
+            }
+        }
+
+        if (user && isExamStarted) {
+            syncTimerFromServer();
+        }
+    }, [user, isExamStarted, router]);
+
     // Load questions from Supabase
     useEffect(() => {
         async function loadQuestions() {
@@ -159,9 +225,45 @@ export default function ExamPage() {
         };
     }, [user, answers, isSubmitted, setIsSyncing, setLastSync]);
 
-    // Online/offline detection
+    // ===========================================
+    // OFFLINE SYNC: Reconnect Recovery with Toast
+    // ===========================================
+    const [showSyncToast, setShowSyncToast] = useState(false);
+
     useEffect(() => {
-        const handleOnline = () => setIsOnline(true);
+        const handleOnline = async () => {
+            setIsOnline(true);
+
+            // Sync all IndexedDB answers to Supabase on reconnect
+            if (user && Object.keys(answers).length > 0) {
+                console.log('🔄 Reconnected - syncing answers to server...');
+                try {
+                    // Import saveAnswer dynamically
+                    const { saveAnswer } = await import('@/lib/queries');
+                    const { getExamState } = await import('@/lib/db');
+
+                    // Get local state
+                    const localState = await getExamState(user.id_siswa);
+                    const answersToSync = localState?.answers || answers;
+
+                    // Sync each answer
+                    let successCount = 0;
+                    for (const [questionId, answer] of Object.entries(answersToSync)) {
+                        const result = await saveAnswer(questionId, answer);
+                        if (result.success) successCount++;
+                    }
+
+                    console.log(`✅ Synced ${successCount}/${Object.keys(answersToSync).length} answers`);
+
+                    // Show success toast
+                    setShowSyncToast(true);
+                    setTimeout(() => setShowSyncToast(false), 4000);
+                } catch (error) {
+                    console.error('Reconnect sync error:', error);
+                }
+            }
+        };
+
         const handleOffline = () => setIsOnline(false);
 
         window.addEventListener('online', handleOnline);
@@ -171,7 +273,7 @@ export default function ExamPage() {
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
         };
-    }, []);
+    }, [user, answers]);
 
     // Auto-hide warning bar after 5 minutes
     useEffect(() => {
@@ -324,6 +426,23 @@ export default function ExamPage() {
                     <span>MODE UJIAN AKTIF - Jangan keluar dari halaman ini atau menutup browser</span>
                 </div>
             )}
+
+            {/* ==================== SYNC SUCCESS TOAST ==================== */}
+            <AnimatePresence>
+                {showSyncToast && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 50 }}
+                        className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50"
+                    >
+                        <div className="bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+                            <CheckCircle2 className="w-5 h-5" />
+                            <span className="font-medium">Koneksi kembali stabil. Jawaban tersimpan ke server.</span>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* ==================== MAIN HEADER ==================== */}
             <header
