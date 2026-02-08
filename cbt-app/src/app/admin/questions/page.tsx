@@ -327,16 +327,16 @@ export default function QuestionsManagement() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center overflow-y-auto py-10"
+                        className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-50 flex items-start md:items-center justify-center overflow-y-auto px-4 py-6 md:py-10"
                     >
                         <motion.div
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-gradient-to-br from-white via-white to-slate-50 rounded-3xl w-full max-w-6xl mx-4 shadow-[0_25px_80px_-12px_rgba(0,0,0,0.25)] ring-1 ring-white/80"
+                            className="bg-gradient-to-br from-white via-white to-slate-50 rounded-3xl w-full max-w-[1100px] shadow-[0_25px_80px_-12px_rgba(0,0,0,0.25)] ring-1 ring-white/80"
                         >
                             {/* --- HEADER --- */}
-                            <div className="relative overflow-hidden px-8 md:px-12 py-8 border-b border-slate-100">
+                            <div className="relative overflow-hidden px-6 sm:px-8 md:px-12 py-6 md:py-8 border-b border-slate-200/60">
                                 <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent"></div>
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-400/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
                                 <div className="relative flex items-center justify-between">
@@ -355,18 +355,18 @@ export default function QuestionsManagement() {
                             </div>
 
                             {/* --- FORM BODY --- */}
-                            <form onSubmit={handleSubmit} className="px-8 md:px-12 py-8 max-h-[70vh] overflow-y-auto">
-                                <div className="grid grid-cols-1 lg:grid-cols-[6fr_4fr] gap-8 items-start">
+                            <form onSubmit={handleSubmit} className="px-6 sm:px-8 md:px-12 py-6 md:py-8 max-h-[72vh] overflow-y-auto">
+                                <div className="grid grid-cols-1 lg:grid-cols-[6fr_4fr] gap-10 items-start">
 
                                     {/* LEFT COLUMN: INFORMATION & CONTENT */}
-                                    <div className="space-y-6">
+                                    <div className="space-y-7">
                                         {/* SECTION 1: Informasi Soal */}
-                                        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                                        <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200/60 hover:shadow-md transition-shadow">
                                             <div className="flex items-center gap-3 mb-5">
                                                 <div className="w-1.5 h-6 bg-gradient-to-b from-emerald-400 to-emerald-600 rounded-full"></div>
                                                 <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Informasi Soal</h3>
                                             </div>
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
                                                 <div className="space-y-2">
                                                     <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">ID Soal</label>
                                                     <Input
@@ -435,7 +435,7 @@ export default function QuestionsManagement() {
                                         </div>
 
                                         {/* SECTION 2: Isi Pertanyaan */}
-                                        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                                        <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200/60 hover:shadow-md transition-shadow">
                                             <div className="flex items-center gap-3 mb-5">
                                                 <div className="w-1.5 h-6 bg-gradient-to-b from-blue-400 to-blue-600 rounded-full"></div>
                                                 <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Isi Pertanyaan</h3>
@@ -471,7 +471,7 @@ export default function QuestionsManagement() {
                                     </div>
 
                                     {/* RIGHT COLUMN: ANSWERS & SETTINGS */}
-                                    <div className="space-y-6">
+                                    <div className="space-y-7">
                                         {/* SECTION 3: Jawaban Kunci */}
                                         {formData.tipe === 'TRUE_FALSE_MULTI' ? (
                                             <TrueFalseMultiEditor
@@ -481,12 +481,12 @@ export default function QuestionsManagement() {
                                                 onAnswersChange={(answers) => setFormData(prev => ({ ...prev, answer_json: answers }))}
                                             />
                                         ) : (
-                                            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                                            <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200/60 hover:shadow-md transition-shadow">
                                                 <div className="flex items-center gap-3 mb-5">
                                                     <div className="w-1.5 h-6 bg-gradient-to-b from-amber-400 to-amber-600 rounded-full"></div>
                                                     <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Jawaban Kunci</h3>
                                                 </div>
-                                                <div className="space-y-3">
+                                                <div className="space-y-4">
                                                     {['A', 'B', 'C', 'D', 'E'].map((opt) => {
                                                         const key = `opsi_${opt.toLowerCase()}` as keyof typeof formData;
                                                         const isKey = formData.tipe === 'COMPLEX'
@@ -498,7 +498,7 @@ export default function QuestionsManagement() {
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => handleKeySelection(opt)}
-                                                                    className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm transition-all flex-shrink-0 ${isKey
+                                                                    className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold text-sm transition-all flex-shrink-0 ${isKey
                                                                         ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg shadow-emerald-500/30 scale-105'
                                                                         : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600'
                                                                         }`}
@@ -509,7 +509,7 @@ export default function QuestionsManagement() {
                                                                     value={formData[key] as string}
                                                                     onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
                                                                     placeholder={`Opsi ${opt}...`}
-                                                                    className={`h-10 px-4 text-sm bg-slate-50 focus:bg-white transition-all rounded-xl border ${isKey
+                                                                    className={`h-11 px-4 text-sm bg-slate-50 focus:bg-white transition-all rounded-xl border ${isKey
                                                                         ? 'border-emerald-300 ring-2 ring-emerald-100'
                                                                         : 'border-slate-200 focus:border-emerald-400'
                                                                         }`}
@@ -526,7 +526,7 @@ export default function QuestionsManagement() {
                                         )}
 
                                         {/* SECTION 4: Pengaturan */}
-                                        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                                        <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200/60 hover:shadow-md transition-shadow">
                                             <div className="flex items-center gap-3 mb-5">
                                                 <div className="w-1.5 h-6 bg-gradient-to-b from-purple-400 to-purple-600 rounded-full"></div>
                                                 <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Pengaturan</h3>

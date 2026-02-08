@@ -1,28 +1,77 @@
 @import "tailwindcss";
 
 :root {
-  /* Light Theme Colors */
-  --color-primary: #2563eb;
-  --color-primary-light: #3b82f6;
-  --color-primary-dark: #1d4ed8;
-  --color-success: #059669;
-  --color-warning: #d97706;
-  --color-danger: #dc2626;
+  /* Premium Palette - Indigo & Slate */
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --primary-foreground: #ffffff;
 
-  /* Light Backgrounds */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-tertiary: #f1f5f9;
-  --bg-card: #ffffff;
+  --secondary: #6366f1;
+  --secondary-hover: #4f46e5;
+  --secondary-foreground: #ffffff;
+
+  --accent: #8b5cf6;
+  --accent-foreground: #ffffff;
+
+  /* Surfaces & Backgrounds */
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --surface-hover: #f1f5f9;
+  --surface-muted: #f8fafc;
 
   /* Text */
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --text: #020617;
+  --text-muted: #64748b;
+  --text-inverse: #ffffff;
 
-  /* Borders */
-  --border-color: #e2e8f0;
-  --border-focus: #3b82f6;
+  /* Borders & Shadows */
+  --border: #e2e8f0;
+  --border-hover: #cbd5e1;
+  --ring: rgba(79, 70, 229, 0.2);
+
+  /* Shadows - Multi-layered for premium feel */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.05), 0 8px 10px -6px rgb(0 0 0 / 0.05);
+  --shadow-premium: 0 10px 40px -10px rgba(0, 0, 0, 0.08), 0 0 20px -5px rgba(0, 0, 0, 0.04);
+
+  /* Radius */
+  --radius-sm: 0.5rem;
+  /* 8px */
+  --radius-md: 0.75rem;
+  /* 12px */
+  --radius-lg: 1rem;
+  /* 16px */
+  --radius-xl: 1.5rem;
+  /* 24px */
+  --radius-2xl: 2rem;
+  /* 32px */
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  --gradient-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 100%);
+  --gradient-app: linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f5f3ff 100%);
+}
+
+@theme {
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+
+  --shadow-premium: var(--shadow-premium);
+
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+
+  --background-image-gradient-primary: var(--gradient-primary);
+  --background-image-gradient-app: var(--gradient-app);
 }
 
 * {
@@ -139,11 +188,58 @@ body {
   animation: shake 0.5s ease-in-out;
 }
 
-/* Glass effect - Light version */
+/* Glass effect - Premium version */
 .glass {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(226, 232, 240, 0.8);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.glass-premium {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow:
+    0 4px 30px rgba(0, 0, 0, 0.05),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+/* Premium Card */
+.card-premium {
+  @apply bg-white rounded-2xl shadow-premium border border-slate-200/60 transition-all duration-300;
+}
+
+.card-premium:hover {
+  @apply shadow-xl border-indigo-200/50 -translate-y-1;
+}
+
+/* Premium Button (Shared with Login) */
+.btn-premium {
+  @apply relative overflow-hidden bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-semibold transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-indigo-500/30 hover:-translate-y-0.5 active:translate-y-0;
+}
+
+.btn-premium::before {
+  content: '';
+  @apply absolute top-0 -left-full w-full h-full bg-linear-to-r from-transparent via-white/20 to-transparent transition-all duration-500;
+}
+
+.btn-premium:hover::before {
+  @apply left-full;
+}
+
+/* Premium Input */
+.input-premium-wrapper {
+  @apply flex items-center h-12 rounded-xl border border-slate-200 bg-slate-50 focus-within:bg-white focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all overflow-hidden shadow-sm;
+}
+
+.input-premium-icon {
+  @apply w-12 h-full flex items-center justify-center shrink-0 border-r border-slate-200 bg-slate-100/50 text-slate-500;
+}
+
+.input-premium {
+  @apply flex-1 h-full px-4 bg-transparent border-none outline-none text-base text-slate-800 placeholder:text-slate-400;
 }
 
 /* Gradient text - Blue version */

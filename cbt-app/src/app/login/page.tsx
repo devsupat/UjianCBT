@@ -167,10 +167,10 @@ export default function LoginPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}
-                        className="w-full max-w-md"
+                        className="w-full max-w-[780px]"
                     >
                         {/* Form Card */}
-                        <div className="bg-white rounded-3xl shadow-xl shadow-indigo-100/50 p-8 sm:p-10">
+                        <div className="bg-white/90 backdrop-blur-xl rounded-[40px] shadow-2xl shadow-indigo-100/50 px-10 py-10 sm:px-24 lg:px-32 border border-white flex flex-col items-center">
                             {/* School Logo */}
                             <div className="flex justify-center mb-6">
                                 <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg shadow-slate-200 overflow-hidden ring-4 ring-indigo-50">
@@ -184,36 +184,37 @@ export default function LoginPage() {
                                 </div>
                             </div>
 
-                            {/* Header */}
-                            <div className="text-center mb-8">
-                                <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
+                            <div className="text-center mb-10 w-full max-w-[580px] flex flex-col items-center">
+                                <h1 className="text-3xl font-black text-slate-900 tracking-tight">
                                     Selamat Datang
                                 </h1>
-                                <p className="text-slate-500 mt-2">
+                                <p className="text-slate-500 mt-3 font-medium">
                                     Silakan masuk untuk memulai ujian
                                 </p>
                             </div>
 
                             {/* Form */}
-                            <form onSubmit={handleSubmit} className="space-y-5">
+                            <form onSubmit={handleSubmit} className="flex flex-col gap-y-[18px] sm:gap-y-[24px]">
                                 {error && (
                                     <motion.div
                                         initial={{ opacity: 0, x: -10 }}
                                         animate={{ opacity: 1, x: 0 }}
-                                        className="flex items-center gap-3 p-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm"
+                                        className="flex items-center gap-4 p-5 rounded-2xl bg-red-50 border border-red-100 text-red-700 text-sm shadow-sm"
                                     >
-                                        <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                                        <span>{error}</span>
+                                        <div className="p-2 bg-red-100 rounded-xl">
+                                            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                                        </div>
+                                        <span className="font-semibold">{error}</span>
                                     </motion.div>
                                 )}
 
                                 {/* Username Field - Flexbox approach */}
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-slate-700">
+                                <div className="space-y-3">
+                                    <label className="text-sm font-bold text-slate-700 ml-1">
                                         Username / NISN
                                     </label>
-                                    <div className="flex items-center h-12 rounded-xl border border-slate-200 bg-slate-50 focus-within:bg-white focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all overflow-hidden">
-                                        <div className="w-12 h-full flex items-center justify-center flex-shrink-0 border-r border-slate-200 bg-slate-100">
+                                    <div className="flex items-center h-14 rounded-full border border-slate-200 bg-slate-50 focus-within:bg-white focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all overflow-hidden shadow-sm">
+                                        <div className="w-14 h-full flex items-center justify-center flex-shrink-0 border-r border-slate-200 bg-slate-100/50">
                                             <User className="w-5 h-5 text-slate-500" />
                                         </div>
                                         <input
@@ -223,18 +224,18 @@ export default function LoginPage() {
                                             onChange={(e) => setUsername(e.target.value)}
                                             disabled={isLoading}
                                             autoComplete="username"
-                                            className="flex-1 h-full px-4 bg-transparent border-none outline-none text-base text-slate-800 placeholder:text-slate-400"
+                                            className="flex-1 h-full px-6 bg-transparent border-none outline-none text-base text-slate-800 placeholder:text-slate-400 font-medium"
                                         />
                                     </div>
                                 </div>
 
                                 {/* Password Field - Flexbox approach */}
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-slate-700">
+                                <div className="space-y-3">
+                                    <label className="text-sm font-bold text-slate-700 ml-1">
                                         Password
                                     </label>
-                                    <div className="flex items-center h-12 rounded-xl border border-slate-200 bg-slate-50 focus-within:bg-white focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all overflow-hidden">
-                                        <div className="w-12 h-full flex items-center justify-center flex-shrink-0 border-r border-slate-200 bg-slate-100">
+                                    <div className="flex items-center h-14 rounded-full border border-slate-200 bg-slate-50 focus-within:bg-white focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all overflow-hidden shadow-sm">
+                                        <div className="w-14 h-full flex items-center justify-center flex-shrink-0 border-r border-slate-200 bg-slate-100/50">
                                             <KeyRound className="w-5 h-5 text-slate-500" />
                                         </div>
                                         <input
@@ -244,14 +245,14 @@ export default function LoginPage() {
                                             onChange={(e) => setPassword(e.target.value)}
                                             disabled={isLoading}
                                             autoComplete="current-password"
-                                            className="flex-1 h-full px-4 bg-transparent border-none outline-none text-base text-slate-800 placeholder:text-slate-400"
+                                            className="flex-1 h-full px-6 bg-transparent border-none outline-none text-base text-slate-800 placeholder:text-slate-400 font-medium"
                                         />
                                     </div>
                                 </div>
 
                                 <Button
                                     type="submit"
-                                    className="w-full h-12 rounded-xl text-base font-semibold bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 hover:shadow-lg hover:shadow-indigo-500/30 transition-all duration-300 mt-2"
+                                    className="w-full h-15 rounded-full text-base font-black bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 shadow-xl shadow-indigo-500/30 hover:shadow-2xl hover:shadow-indigo-500/50 transition-all duration-300 tracking-wide"
                                     size="lg"
                                     disabled={isLoading}
                                 >
@@ -268,19 +269,19 @@ export default function LoginPage() {
                                     )}
                                 </Button>
                             </form>
-
-                            {/* Help Text */}
-                            <p className="mt-6 text-center text-sm text-slate-400">
-                                Hubungi pengawas jika mengalami kendala login
-                            </p>
                         </div>
 
-                        {/* Footer */}
-                        <p className="mt-8 text-center text-xs text-slate-400">
-                            © 2026 {process.env.NEXT_PUBLIC_APP_NAME || "SDN Sukasari 4"}
+                        {/* Help Text */}
+                        <p className="mt-6 text-center text-sm text-slate-400">
+                            Hubungi pengawas jika mengalami kendala login
                         </p>
                     </motion.div>
                 </div>
+
+                {/* Footer */}
+                <p className="mt-8 text-center text-xs text-slate-400">
+                    © 2026 {process.env.NEXT_PUBLIC_APP_NAME || "SDN Sukasari 4"}
+                </p>
             </div>
         </div>
     );
