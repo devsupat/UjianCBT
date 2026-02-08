@@ -114,6 +114,7 @@ export async function middleware(request: NextRequest) {
         console.log('✅ Admin access granted');
     }
 
+    console.log('🌐 Middleware: Requesting', request.nextUrl.pathname);
     return supabaseResponse
 }
 
@@ -121,6 +122,7 @@ export const config = {
     matcher: [
         '/exam/:path*',
         '/pin-verify',
+        '/admin',
         '/admin/:path*'
     ],
 }
