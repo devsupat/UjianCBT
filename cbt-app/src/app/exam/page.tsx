@@ -21,7 +21,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { useExamStore } from '@/store/examStore';
 import { useExamSecurity } from '@/hooks/useExamSecurity';
-import { getQuestions, syncAnswers, submitExam, reportViolation } from '@/lib/api';
+// Use Supabase queries instead of legacy GAS API
+import { fetchQuestions, syncAnswers, submitExam, reportViolation, saveAnswer } from '@/lib/queries';
 import { formatTime } from '@/lib/utils';
 import type { Question, ViolationType } from '@/types';
 import TrueFalseMultiRenderer from '@/components/TrueFalseMultiRenderer';
@@ -70,40 +71,32 @@ export default function ExamPage() {
         }
     }, [user, isExamStarted, router]);
 
-    // Check PIN validation
+    // Check Token validation (Smart Exam Token system)
     useEffect(() => {
-        async function checkPinAccess() {
+        async function checkTokenAccess() {
             if (!user) return;
 
-            // Check if PIN is required
-            const { getExamPinStatus } = await import('@/lib/api');
-            const pinStatus = await getExamPinStatus();
-
-            if (pinStatus.success && pinStatus.data?.isPinRequired) {
-                // PIN required - check if validated
-                const pinValidated = sessionStorage.getItem('pin_validated');
-                if (!pinValidated) {
-                    // Not validated, redirect to PIN page
-                    router.replace('/pin-verify');
-                    return;
-                }
+            // Token validation is now handled at /pin-verify
+            const tokenValidated = sessionStorage.getItem('token_validated');
+            if (!tokenValidated) {
+                router.replace('/pin-verify');
+                return;
             }
         }
 
         if (user && isExamStarted) {
-            checkPinAccess();
+            checkTokenAccess();
         }
     }, [user, isExamStarted, router]);
 
-    // Load questions
+    // Load questions from Supabase
     useEffect(() => {
         async function loadQuestions() {
             try {
-                const response = await getQuestions();
-                if (response.success && response.data) {
-                    setQuestions(response.data);
-                    // Always start from question 1 (index 0) when questions are loaded
-                    // This fixes the shuffle bug where old index was persisted
+                // fetchQuestions returns Question[] directly (not wrapped in ApiResponse)
+                const questionsData = await fetchQuestions();
+                if (questionsData && questionsData.length > 0) {
+                    setQuestions(questionsData);
                     setCurrentQuestionIndex(0);
                 }
             } catch (error) {
@@ -197,7 +190,8 @@ export default function ExamPage() {
         setViolations(count);
 
         try {
-            await reportViolation(user.id_siswa, type);
+            // reportViolation from queries.ts only takes type (user from auth)
+            await reportViolation(type);
         } catch (error) {
             console.error('Failed to report violation:', error);
         }
@@ -225,7 +219,8 @@ export default function ExamPage() {
         setIsSubmitting(true);
 
         try {
-            const response = await submitExam(user.id_siswa, answers, forced);
+            // submitExam from queries.ts: (answers, forced) - user from auth
+            const response = await submitExam(answers, forced);
 
             if (response.success) {
                 setIsSubmitted(true);
@@ -259,20 +254,31 @@ export default function ExamPage() {
     });
 
     const handleAnswerSelect = (questionId: string, value: string, isComplex: boolean) => {
+        let finalAnswer: string | string[];
         if (isComplex) {
             const currentAnswer = (answers[questionId] as string[]) || [];
-            const newAnswer = currentAnswer.includes(value)
+            finalAnswer = currentAnswer.includes(value)
                 ? currentAnswer.filter((v) => v !== value)
                 : [...currentAnswer, value];
-            setAnswer(questionId, newAnswer);
         } else {
-            setAnswer(questionId, value);
+            finalAnswer = value;
         }
+        setAnswer(questionId, finalAnswer);
+
+        // LIVE SCORE: Save answer to database (triggers score calculation)
+        saveAnswer(questionId, finalAnswer).catch(err => {
+            console.warn('Live score sync failed:', err);
+        });
     };
 
     // Handler for TRUE_FALSE_MULTI answers
     const handleTrueFalseMultiAnswer = (questionId: string, booleanAnswers: (boolean | null)[]) => {
         setAnswer(questionId, booleanAnswers);
+
+        // LIVE SCORE: Save answer to database (triggers score calculation)
+        saveAnswer(questionId, booleanAnswers).catch(err => {
+            console.warn('Live score sync failed:', err);
+        });
     };
 
     const toggleFlag = (questionId: string) => {

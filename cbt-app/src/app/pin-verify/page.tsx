@@ -3,17 +3,17 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Lock, Loader2, KeyRound, AlertCircle, CheckCircle2, Info } from 'lucide-react';
+import { KeyRound, Loader2, ArrowRight, AlertCircle, ShieldCheck, User, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { validateExamPin } from '@/lib/api';
+import { verifyExamAccess } from '@/lib/queries';
 import { useExamStore } from '@/store/examStore';
 
-export default function PinVerifyPage() {
+export default function ExamEntrancePage() {
     const router = useRouter();
     const { user } = useExamStore();
 
-    const [pin, setPin] = useState('');
+    const [token, setToken] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -28,25 +28,27 @@ export default function PinVerifyPage() {
         e.preventDefault();
         setError('');
 
-        if (!pin.trim()) {
-            setError('PIN harus diisi');
+        if (!token.trim()) {
+            setError('Token ujian harus diisi');
             return;
         }
 
         setIsLoading(true);
 
         try {
-            const response = await validateExamPin(pin.trim());
+            const response = await verifyExamAccess(token.trim());
 
             if (response.success) {
-                // Set flag in sessionStorage so exam page knows PIN is validated
-                sessionStorage.setItem('pin_validated', 'true');
+                // Set flag in sessionStorage so exam page knows token is validated
+                sessionStorage.setItem('token_validated', 'true');
+                sessionStorage.setItem('exam_packet', response.packet || 'A');
                 router.push('/exam');
             } else {
-                setError(response.message || 'PIN salah');
-                setPin(''); // Clear input on error
+                setError(response.error || 'Token tidak valid');
+                setToken(''); // Clear input on error
             }
-        } catch {
+        } catch (err) {
+            console.error('Token verification error:', err);
             setError('Terjadi kesalahan. Coba lagi.');
         } finally {
             setIsLoading(false);
@@ -67,103 +69,118 @@ export default function PinVerifyPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="w-full max-w-md relative"
+                className="w-full max-w-lg relative"
             >
                 {/* Main Card */}
                 <div className="bg-white rounded-3xl shadow-2xl shadow-indigo-100/50 p-8 sm:p-10 border border-slate-100">
                     {/* Icon */}
                     <div className="flex justify-center mb-6">
-                        <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                            <Lock className="w-10 h-10 text-white" />
+                        <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                            <ShieldCheck className="w-10 h-10 text-white" />
                         </div>
                     </div>
 
                     {/* Header */}
                     <div className="text-center mb-8">
                         <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-2">
-                            Menunggu PIN dari Pengawas
+                            Masuk Ruang Ujian
                         </h1>
                         <p className="text-slate-500">
-                            Tanyakan PIN ke pengawas ujian untuk memulai
+                            Silakan masukkan Token Ujian yang diberikan oleh Pengawas
                         </p>
                     </div>
 
-                    {/* Info Banner */}
-                    <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-50 border border-blue-100 mb-6">
-                        <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                        <div className="text-sm text-blue-700">
-                            <p className="font-medium mb-1">Hai, {user.nama_lengkap}!</p>
-                            <p className="text-blue-600">Login berhasil. Tunggu pengawas memberikan PIN untuk memulai ujian.</p>
+                    {/* Student Info Banner */}
+                    <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100 mb-6">
+                        <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
+                            <User className="w-6 h-6 text-indigo-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-slate-800 truncate">{user.nama_lengkap}</p>
+                            <div className="flex items-center gap-2 text-sm text-slate-500">
+                                <BookOpen className="w-4 h-4" />
+                                <span>{user.kelas || 'Kelas belum diatur'}</span>
+                            </div>
                         </div>
                     </div>
 
                     {/* Form */}
-                    <form onSubmit={handleSubmit} className="space-y-5">
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Error Display */}
                         {error && (
                             <motion.div
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                className="flex items-center gap-3 p-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm"
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-100"
                             >
-                                <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                                <span>{error}</span>
+                                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="font-medium text-red-700">Gagal Memverifikasi</p>
+                                    <p className="text-sm text-red-600 mt-0.5">{error}</p>
+                                </div>
                             </motion.div>
                         )}
 
-                        {/* PIN Input */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700 block">
-                                PIN Ujian
+                        {/* Token Input */}
+                        <div className="space-y-3">
+                            <label className="text-sm font-semibold text-slate-700 block">
+                                Token Ujian
                             </label>
-                            <div className="flex items-center h-14 rounded-xl border-2 border-slate-200 bg-slate-50 focus-within:bg-white focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all overflow-hidden">
-                                <div className="w-14 h-full flex items-center justify-center flex-shrink-0 border-r-2 border-slate-200 bg-slate-100">
-                                    <KeyRound className="w-6 h-6 text-slate-500" />
-                                </div>
-                                <input
+                            <div className="relative">
+                                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                                <Input
                                     type="text"
-                                    placeholder="Masukkan PIN"
-                                    value={pin}
-                                    onChange={(e) => setPin(e.target.value.toUpperCase())}
+                                    placeholder="Masukkan token"
+                                    value={token}
+                                    onChange={(e) => setToken(e.target.value.toUpperCase())}
                                     disabled={isLoading}
                                     autoFocus
-                                    className="flex-1 h-full px-4 bg-transparent border-none outline-none text-lg font-semibold text-slate-800 placeholder:text-slate-400 placeholder:font-normal tracking-wider"
-                                    maxLength={10}
+                                    className="h-14 pl-12 text-center text-2xl font-bold tracking-[0.3em] uppercase bg-slate-50 border-2 border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-xl placeholder:text-slate-300 placeholder:tracking-normal placeholder:text-base placeholder:font-normal"
+                                    maxLength={8}
                                 />
                             </div>
-                            <p className="text-xs text-slate-400">
-                                PIN dapat berupa angka atau huruf (misal: 2024 atau ABC123)
+                            <p className="text-xs text-slate-400 text-center">
+                                Token berupa 6 karakter huruf dan angka
                             </p>
                         </div>
 
+                        {/* Submit Button */}
                         <Button
                             type="submit"
-                            className="w-full h-12 rounded-xl text-base font-semibold bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 hover:shadow-lg hover:shadow-indigo-500/30 transition-all duration-300"
+                            className="w-full h-14 rounded-xl text-base font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 hover:shadow-lg hover:shadow-emerald-500/30 transition-all duration-300"
                             size="lg"
-                            disabled={isLoading || !pin.trim()}
+                            disabled={isLoading || !token.trim()}
                         >
                             {isLoading ? (
                                 <>
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                    Memvalidasi...
+                                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                                    Memverifikasi...
                                 </>
                             ) : (
                                 <>
-                                    <CheckCircle2 className="w-5 h-5" />
-                                    Mulai Ujian
+                                    Mulai Mengerjakan
+                                    <ArrowRight className="w-5 h-5 ml-2" />
                                 </>
                             )}
                         </Button>
                     </form>
 
                     {/* Help Text */}
-                    <p className="mt-6 text-center text-sm text-slate-400">
-                        Jika mengalami kendala, hubungi pengawas ujian
-                    </p>
+                    <div className="mt-8 pt-6 border-t border-slate-100">
+                        <p className="text-center text-sm text-slate-400">
+                            Jika mengalami kendala, hubungi pengawas ujian Anda
+                        </p>
+                    </div>
                 </div>
 
                 {/* Footer */}
                 <p className="mt-6 text-center text-xs text-slate-400">
-                    {user.kelas} • NISN: {user.username}
+                    NISN: {user.username} • {new Date().toLocaleDateString('id-ID', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    })}
                 </p>
             </motion.div>
         </div>

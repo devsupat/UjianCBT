@@ -9,7 +9,10 @@ import {
     CheckCircle2,
     AlertCircle,
     Loader2,
-    Download
+    Download,
+    FileText,
+    Check,
+    Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -37,7 +40,6 @@ export default function QuestionImporter({ onClose, onSuccess }: QuestionImporte
             alert('Hanya file Excel (.xlsx, .xls) atau CSV yang diizinkan');
             return;
         }
-
         setFile(selectedFile);
         parseExcelFile(selectedFile);
     };
@@ -45,86 +47,42 @@ export default function QuestionImporter({ onClose, onSuccess }: QuestionImporte
     const parseExcelFile = async (file: File) => {
         setIsProcessing(true);
         setValidationErrors([]);
-
         try {
             const buffer = await file.arrayBuffer();
             const workbook = XLSX.read(buffer, { type: 'array' });
-
-            // Prefer DATA_SOAL sheet, fallback to first sheet
             const dataSheetName = workbook.SheetNames.find(name =>
                 name.toUpperCase() === 'DATA_SOAL'
             ) || workbook.SheetNames[0];
             const worksheet = workbook.Sheets[dataSheetName];
-
-            // Convert to JSON with header row
-            const rawData: Record<string, any>[] = XLSX.utils.sheet_to_json(worksheet, {
-                defval: ''
-            });
-
-            // Normalize column names (handle case variations like 'kategori' vs 'Kategori')
+            const rawData: Record<string, any>[] = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
             const jsonData: QuestionImportRow[] = rawData.map(row => {
                 const normalized: any = {};
                 Object.keys(row).forEach(key => {
-                    // Map common variations
-                    if (key.toLowerCase() === 'kategori') {
-                        normalized['Kategori'] = row[key];
-                    } else {
-                        normalized[key] = row[key];
-                    }
+                    if (key.toLowerCase() === 'kategori') normalized['Kategori'] = row[key];
+                    else normalized[key] = row[key];
                 });
                 return normalized as QuestionImportRow;
             });
 
-            // Validate and show preview
             const errors: Array<{ row: number; error: string }> = [];
             const validatedData: QuestionImportRow[] = [];
-
             jsonData.forEach((row, idx) => {
-                const rowNum = idx + 2; // +2 because Excel rows start at 1 and we have header
-
-                // Validation
+                const rowNum = idx + 2;
                 if (!row.Pertanyaan || row.Pertanyaan.trim() === '') {
-                    errors.push({ row: rowNum, error: 'Pertanyaan tidak boleh kosong' });
+                    errors.push({ row: rowNum, error: 'Pertanyaan kosong' });
                     return;
                 }
-
                 if (!['SINGLE', 'COMPLEX', 'TRUE_FALSE_MULTI'].includes(row.Tipe)) {
-                    errors.push({ row: rowNum, error: `Tipe soal tidak valid: ${row.Tipe}. Harus SINGLE, COMPLEX, atau TRUE_FALSE_MULTI` });
+                    errors.push({ row: rowNum, error: `Tipe invalid: ${row.Tipe}` });
                     return;
                 }
-
-                // Validate options for SINGLE and COMPLEX
-                if (row.Tipe !== 'TRUE_FALSE_MULTI') {
-                    if (!row['Opsi A'] || !row['Opsi B']) {
-                        errors.push({ row: rowNum, error: 'Minimal Opsi A dan B harus diisi' });
-                        return;
-                    }
-                    if (!row.Kunci) {
-                        errors.push({ row: rowNum, error: 'Kunci jawaban harus diisi' });
-                        return;
-                    }
-                }
-
-                // Validate TRUE_FALSE_MULTI
-                if (row.Tipe === 'TRUE_FALSE_MULTI') {
-                    if (!row.Pernyataan || row.Pernyataan.trim() === '') {
-                        errors.push({ row: rowNum, error: 'Kolom Pernyataan harus diisi untuk tipe TRUE_FALSE_MULTI' });
-                        return;
-                    }
-                    if (!row.Kunci) {
-                        errors.push({ row: rowNum, error: 'Kunci jawaban (B/S) harus diisi' });
-                        return;
-                    }
-                }
-
                 validatedData.push(row);
             });
-
             setValidationErrors(errors);
-            setPreviewData(validatedData.slice(0, 10)); // Show first 10 for preview
+            setPreviewData(validatedData.slice(0, 10));
         } catch (error) {
             console.error('Parse error:', error);
-            alert('Gagal membaca file Excel. Pastikan format file sudah benar.');
+            alert('Format file tidak didukung.');
         } finally {
             setIsProcessing(false);
         }
@@ -136,13 +94,10 @@ export default function QuestionImporter({ onClose, onSuccess }: QuestionImporte
                 nomor_urut: row.No || idx + 1,
                 tipe: row.Tipe,
                 pertanyaan: row.Pertanyaan,
-                gambar_url: undefined, // Excel doesn't have image URLs currently
                 bobot: row.Bobot || 1,
                 kategori: row.Kategori || undefined,
                 paket: row.Paket || undefined
             };
-
-            // Build options JSONB
             const options: Record<string, string> = {};
             if (row.Tipe !== 'TRUE_FALSE_MULTI') {
                 if (row['Opsi A']) options.a = row['Opsi A'];
@@ -151,95 +106,97 @@ export default function QuestionImporter({ onClose, onSuccess }: QuestionImporte
                 if (row['Opsi D']) options.d = row['Opsi D'];
                 if (row['Opsi E']) options.e = row['Opsi E'];
             }
-
-            // Build correct_answer_config JSONB based on type
             let correct_answer_config: any = {};
-
             if (row.Tipe === 'SINGLE') {
-                // Format: {\"answer\": \"A\"}
-                correct_answer_config = {
-                    answer: row.Kunci.trim().toUpperCase()
-                };
+                correct_answer_config = { answer: row.Kunci?.trim().toUpperCase() || 'A' };
             } else if (row.Tipe === 'COMPLEX') {
-                // Format: {\"answers\": [\"A\", \"C\", \"D\"]}
-                const answers = row.Kunci
-                    .split(',')
-                    .map(k => k.trim().toUpperCase())
-                    .filter(Boolean);
-                correct_answer_config = {
-                    answers
-                };
+                correct_answer_config = { answers: row.Kunci?.split(',').map(k => k.trim().toUpperCase()).filter(Boolean) || [] };
             } else if (row.Tipe === 'TRUE_FALSE_MULTI') {
-                // Pernyataan: semicolon-separated statements
-                const statements = row.Pernyataan
-                    ? row.Pernyataan.split(';').map(s => s.trim()).filter(Boolean)
-                    : [];
-
-                // Kunci: B,S,B,S where B = Benar (true), S = Salah (false)
-                const answerKeys = row.Kunci.split(',').map(k => k.trim().toUpperCase());
-                const answers = answerKeys.map(key => {
-                    if (key === 'B') return true;  // Benar
-                    if (key === 'S') return false; // Salah
-                    return null;
-                }).filter(val => val !== null) as boolean[];
-
-                correct_answer_config = {
-                    statements,
-                    answers
-                };
+                const statements = row.Pernyataan ? row.Pernyataan.split(';').map(s => s.trim()).filter(Boolean) : [];
+                const answers = row.Kunci?.split(',').map(k => k.trim().toUpperCase()).map(key => key === 'B') || [];
+                correct_answer_config = { statements, answers };
             }
-
-            return {
-                ...baseQuestion,
-                options,
-                correct_answer_config
-            };
+            return { ...baseQuestion, options, correct_answer_config };
         });
     };
 
+    // Helper function to normalize Excel column names
+    const normalizeRow = (row: Record<string, any>): QuestionImportRow => {
+        const normalized: any = {};
+        Object.keys(row).forEach(key => {
+            const lowerKey = key.toLowerCase().trim();
+            // Map common variations of column names
+            if (lowerKey === 'no' || lowerKey === 'nomor') normalized['No'] = row[key];
+            else if (lowerKey === 'tipe' || lowerKey === 'type') normalized['Tipe'] = row[key]?.toString().toUpperCase().trim();
+            else if (lowerKey === 'pertanyaan' || lowerKey === 'soal' || lowerKey === 'question') normalized['Pertanyaan'] = row[key];
+            else if (lowerKey === 'opsi a' || lowerKey === 'opsi_a' || lowerKey === 'a') normalized['Opsi A'] = row[key];
+            else if (lowerKey === 'opsi b' || lowerKey === 'opsi_b' || lowerKey === 'b') normalized['Opsi B'] = row[key];
+            else if (lowerKey === 'opsi c' || lowerKey === 'opsi_c' || lowerKey === 'c') normalized['Opsi C'] = row[key];
+            else if (lowerKey === 'opsi d' || lowerKey === 'opsi_d' || lowerKey === 'd') normalized['Opsi D'] = row[key];
+            else if (lowerKey === 'opsi e' || lowerKey === 'opsi_e' || lowerKey === 'e') normalized['Opsi E'] = row[key];
+            else if (lowerKey === 'kunci' || lowerKey === 'jawaban' || lowerKey === 'answer') normalized['Kunci'] = row[key]?.toString();
+            else if (lowerKey === 'bobot' || lowerKey === 'skor' || lowerKey === 'score') normalized['Bobot'] = parseInt(row[key]) || 1;
+            else if (lowerKey === 'kategori' || lowerKey === 'category') normalized['Kategori'] = row[key];
+            else if (lowerKey === 'paket' || lowerKey === 'package') normalized['Paket'] = row[key];
+            else if (lowerKey === 'pernyataan' || lowerKey === 'statements') normalized['Pernyataan'] = row[key];
+            else normalized[key] = row[key];
+        });
+        return normalized as QuestionImportRow;
+    };
+
     const handleImport = async () => {
-        if (validationErrors.length > 0) {
-            alert('Perbaiki error validasi terlebih dahulu sebelum import');
-            return;
-        }
-
-        if (previewData.length === 0) {
-            alert('Tidak ada data valid untuk diimport');
-            return;
-        }
-
+        if (!file || isProcessing) return;
         setIsProcessing(true);
-
         try {
-            // Parse entire file again (not just preview)
-            const buffer = await file!.arrayBuffer();
+            const buffer = await file.arrayBuffer();
             const workbook = XLSX.read(buffer, { type: 'array' });
-            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-            const allData: QuestionImportRow[] = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+            const dataSheetName = workbook.SheetNames.find(name =>
+                name.toUpperCase() === 'DATA_SOAL'
+            ) || workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[dataSheetName];
+            const rawData: Record<string, any>[] = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
 
-            // Filter out invalid rows
+            // DEBUG: Log raw data from Excel
+            console.log('📊 Raw Excel Data:', rawData);
+            console.log('📊 Sheet name used:', dataSheetName);
+
+            // Normalize all rows to expected column names
+            const allData: QuestionImportRow[] = rawData.map(row => normalizeRow(row));
+
+            // DEBUG: Log normalized data
+            console.log('🔄 Normalized Data:', allData);
+
+            // Filter out rows with validation errors and rows without required fields
             const validRows = allData.filter((row, idx) => {
                 const rowNum = idx + 2;
-                return !validationErrors.some(err => err.row === rowNum);
+                // Skip if this row had validation errors
+                if (validationErrors.some(err => err.row === rowNum)) return false;
+                // Skip if missing required fields
+                if (!row.Tipe || !row.Pertanyaan) {
+                    console.log(`⚠️ Row ${rowNum} skipped: Tipe=${row.Tipe}, Pertanyaan=${row.Pertanyaan?.substring(0, 50)}`);
+                    return false;
+                }
+                return true;
             });
 
-            // Transform to database format
+            // DEBUG: Log valid rows
+            console.log('✅ Valid Rows:', validRows.length, validRows);
+
+            if (validRows.length === 0) {
+                alert('Tidak ada data valid untuk diimport. Pastikan kolom Tipe dan Pertanyaan terisi.');
+                setIsProcessing(false);
+                return;
+            }
+
             const questionsToInsert = transformToDatabase(validRows);
-
-            // Call bulk insert
             const result = await bulkInsertQuestions(questionsToInsert);
-
             setImportResult(result);
-
             if (result.success) {
-                setTimeout(() => {
-                    onSuccess();
-                    onClose();
-                }, 2000);
+                setTimeout(() => { onSuccess(); onClose(); }, 2000);
             }
         } catch (error) {
             console.error('Import error:', error);
-            alert('Gagal melakukan import. Silakan coba lagi.');
+            alert('Gagal mengimport soal.');
         } finally {
             setIsProcessing(false);
         }
@@ -250,194 +207,178 @@ export default function QuestionImporter({ onClose, onSuccess }: QuestionImporte
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-6"
             onClick={onClose}
         >
             <motion.div
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
-                className="bg-white rounded-3xl w-full max-w-6xl max-h-[90vh] overflow-hidden shadow-2xl"
+                className="bg-white rounded-2xl w-[85vw] max-w-[700px] max-h-[90vh] overflow-hidden shadow-2xl border border-gray-200 flex flex-col"
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Header */}
-                <div className="bg-gradient-to-r from-blue-500 to-indigo-600 px-8 py-6 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                            <FileSpreadsheet className="w-6 h-6 text-white" />
-                        </div>
+                {/* Header Section */}
+                <div className="px-10 py-6 border-b border-gray-100 bg-gray-50/50 shrink-0">
+                    <div className="flex items-center justify-between">
                         <div>
-                            <h2 className="text-2xl font-bold text-white">Import Soal dari Excel</h2>
-                            <p className="text-blue-100 text-sm">Upload file Excel untuk import soal massal</p>
+                            <h2 className="text-2xl font-bold tracking-tight text-gray-900">Import Soal Massal</h2>
+                            <p className="text-base text-gray-500 mt-1">Unggah berkas Excel untuk menambahkan banyak soal sekaligus.</p>
                         </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <a
-                            href="/templates/template-soal-cbt.xlsx"
-                            download="template-soal-cbt.xlsx"
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white text-sm font-medium rounded-xl transition-colors"
-                        >
-                            <Download className="w-4 h-4" />
-                            Unduh Template
-                        </a>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={onClose}
-                            className="text-white hover:bg-white/20 rounded-xl"
-                        >
+                        <Button variant="ghost" size="icon" onClick={onClose} className="h-10 w-10 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
                             <X className="w-5 h-5" />
                         </Button>
                     </div>
                 </div>
 
-                <div className="p-8 overflow-y-auto max-h-[calc(90vh-120px)]">
-                    {/* File Upload Area */}
-                    {!file && (
-                        <div
-                            onDragOver={(e) => {
-                                e.preventDefault();
-                                setIsDragOver(true);
-                            }}
-                            onDragLeave={() => setIsDragOver(false)}
-                            onDrop={(e) => {
-                                e.preventDefault();
-                                setIsDragOver(false);
-                                const droppedFile = e.dataTransfer.files[0];
-                                if (droppedFile) handleFileSelect(droppedFile);
-                            }}
-                            className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all ${isDragOver
-                                ? 'border-blue-500 bg-blue-50'
-                                : 'border-slate-300 hover:border-blue-400 hover:bg-slate-50'
-                                }`}
-                        >
-                            <Upload className="w-16 h-16 mx-auto mb-4 text-slate-400" />
-                            <h3 className="text-lg font-semibold text-slate-700 mb-2">
-                                Drop file Excel di sini atau klik untuk browse
-                            </h3>
-                            <p className="text-sm text-slate-500 mb-6">
-                                Format: .xlsx, .xls, atau .csv (maksimal 10MB)
-                            </p>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                accept=".xlsx,.xls,.csv"
-                                onChange={(e) => {
-                                    const selectedFile = e.target.files?.[0];
-                                    if (selectedFile) handleFileSelect(selectedFile);
-                                }}
-                                className="hidden"
-                            />
-                            <Button
-                                onClick={() => fileInputRef.current?.click()}
-                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                {/* Content Section - Spacious padding */}
+                <div className="flex-1 overflow-y-auto" style={{ padding: '32px 40px' }}>
+                    <AnimatePresence mode="wait">
+                        {!file && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.98 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.98 }}
+                                className="space-y-6"
                             >
-                                <Upload className="w-4 h-4 mr-2" />
-                                Pilih File
-                            </Button>
-
-                            {/* Format Info */}
-                            <div className="mt-8 p-4 bg-amber-50 rounded-xl border border-amber-200">
-                                <h4 className="font-semibold text-amber-900 mb-2 flex items-center gap-2">
-                                    <AlertCircle className="w-4 h-4" />
-                                    Format Excel yang Diperlukan
-                                </h4>
-                                <p className="text-sm text-amber-800 text-left">
-                                    Kolom wajib: <code className="bg-amber-100 px-1 rounded">No, Pertanyaan, Tipe, Opsi A, Opsi B, Opsi C, Opsi D, Opsi E, Kunci, Bobot</code>
-                                    <br />
-                                    Kolom opsional: <code className="bg-amber-100 px-1 rounded">Kategori, Paket, Pernyataan</code>
-                                    <br /><br />
-                                    <strong>Catatan untuk TRUE_FALSE_MULTI:</strong>
-                                    <br />• Gunakan kolom <code className="bg-amber-100 px-1 rounded">Pernyataan</code> dengan pemisah titik koma (;)
-                                    <br />• Kunci jawaban: B = Benar, S = Salah. Contoh: <code className="bg-amber-100 px-1 rounded">B,S,B,S</code>
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Preview and Validation */}
-                    {file && !importResult && (
-                        <div className="space-y-6">
-                            {/* File Info */}
-                            <Card className="p-4 bg-slate-50 border-slate-200">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <FileSpreadsheet className="w-8 h-8 text-blue-600" />
-                                        <div>
-                                            <p className="font-semibold text-slate-800">{file.name}</p>
-                                            <p className="text-sm text-slate-500">
-                                                {(file.size / 1024).toFixed(2)} KB
-                                            </p>
-                                        </div>
+                                {/* Upload Area - Larger and more prominent */}
+                                <div
+                                    onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                                    onDragLeave={() => setIsDragOver(false)}
+                                    onDrop={(e) => { e.preventDefault(); setIsDragOver(false); handleFileSelect(e.dataTransfer.files[0]); }}
+                                    className={`relative group border-2 border-dashed rounded-2xl text-center transition-all duration-300 ${isDragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100/50'}`}
+                                    style={{ padding: '40px', minHeight: '200px' }}
+                                >
+                                    {/* Large Upload Icon - 80x80px */}
+                                    <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-md border border-gray-200 group-hover:scale-110 transition-transform">
+                                        <Upload className="w-10 h-10 text-gray-400 group-hover:text-blue-600 transition-colors" />
                                     </div>
+
+                                    {/* Larger Text - 18px */}
+                                    <h3 className="text-lg font-bold text-gray-900 mb-2">Tarik & Lepas File Excel</h3>
+                                    <p className="text-gray-500 text-base mb-6">Atau cari file dari perangkat Anda (.xlsx, .xls, .csv)</p>
+
+                                    <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx,.xls,.csv" onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])} />
+
+                                    {/* Larger Button - 12px 32px padding, 16px font, 180px min-width */}
                                     <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => {
-                                            setFile(null);
-                                            setPreviewData([]);
-                                            setValidationErrors([]);
-                                        }}
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="h-12 px-8 min-w-[180px] bg-slate-900 hover:bg-slate-800 text-white text-base font-semibold rounded-xl shadow-lg transition-all"
                                     >
-                                        <X className="w-4 h-4 mr-1" />
-                                        Remove
+                                        Pilih File Excel
                                     </Button>
                                 </div>
-                            </Card>
 
-                            {/* Validation Errors */}
-                            {validationErrors.length > 0 && (
-                                <Card className="p-4 bg-red-50 border-red-200">
-                                    <h4 className="font-semibold text-red-900 mb-3 flex items-center gap-2">
-                                        <AlertCircle className="w-5 h-5" />
-                                        Error Validasi ({validationErrors.length})
-                                    </h4>
-                                    <div className="space-y-1 text-sm text-red-800 max-h-40 overflow-y-auto">
-                                        {validationErrors.map((err, idx) => (
-                                            <p key={idx}>
-                                                <strong>Baris {err.row}:</strong> {err.error}
-                                            </p>
-                                        ))}
-                                    </div>
-                                </Card>
-                            )}
-
-                            {/* Preview Table */}
-                            {previewData.length > 0 && (
-                                <div>
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h3 className="font-semibold text-slate-800">
-                                            Preview Data (10 pertama dari {previewData.length} soal)
-                                        </h3>
-                                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                                            {validationErrors.length === 0 ? 'Siap Import' : 'Ada Error'}
-                                        </Badge>
+                                {/* Format Guidelines - Spacious 2-column layout */}
+                                <div className="bg-amber-50 border border-amber-200 rounded-xl" style={{ padding: '20px 24px' }}>
+                                    <div className="flex gap-4 mb-4">
+                                        {/* Larger Warning Icon */}
+                                        <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0 border border-amber-200">
+                                            <AlertCircle className="w-6 h-6 text-amber-600" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <h4 className="text-sm font-bold text-amber-800 uppercase tracking-wider">Ketentuan Format Kolom</h4>
+                                        </div>
                                     </div>
 
-                                    <div className="border rounded-xl overflow-hidden">
+                                    {/* 2-Column Grid for Format Requirements */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3" style={{ fontSize: '14px', lineHeight: '1.6' }}>
+                                        <div className="flex items-start gap-3">
+                                            <Check className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                                            <span className="text-amber-900">
+                                                <strong>Wajib:</strong> Pertanyaan, Tipe, Opsi A-B, Kunci
+                                            </span>
+                                        </div>
+                                        <div className="flex items-start gap-3">
+                                            <Check className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                                            <span className="text-amber-900">
+                                                <strong>Tipe:</strong> SINGLE, COMPLEX, TRUE_FALSE_MULTI
+                                            </span>
+                                        </div>
+                                        <div className="flex items-start gap-3">
+                                            <Check className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                                            <span className="text-amber-900">
+                                                <strong>Multi-Kunci:</strong> Pisahkan dengan koma (A,C,D)
+                                            </span>
+                                        </div>
+                                        <div className="flex items-start gap-3">
+                                            <Check className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                                            <span className="text-amber-900">
+                                                <strong>Pernyataan T/F:</strong> Pisahkan dengan titik koma (;)
+                                            </span>
+                                        </div>
+                                        <div className="flex items-start gap-3">
+                                            <Check className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                                            <span className="text-amber-900">
+                                                <strong>Opsional:</strong> No, Bobot, Kategori, Paket
+                                            </span>
+                                        </div>
+                                        <div className="flex items-start gap-3">
+                                            <Check className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                                            <span className="text-amber-900">
+                                                <strong>Sheet:</strong> Gunakan nama "DATA_SOAL"
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {file && !importResult && (
+                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+                                <div className="flex items-center justify-between p-6 bg-slate-900 rounded-[1.5rem] text-white">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center font-bold">
+                                            <FileText className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold tracking-tight">{file.name}</p>
+                                            <p className="text-xs text-slate-400 font-medium uppercase tracking-widest">{(file.size / 1024).toFixed(1)} KB • Siap Diproses</p>
+                                        </div>
+                                    </div>
+                                    <Button variant="ghost" onClick={() => { setFile(null); setPreviewData([]); setValidationErrors([]); }} className="text-slate-400 hover:text-white hover:bg-white/10 rounded-xl font-bold">Ganti File</Button>
+                                </div>
+
+                                {validationErrors.length > 0 && (
+                                    <div className="p-6 bg-red-50 rounded-2xl border border-red-100">
+                                        <h4 className="text-sm font-black text-red-700 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                            <AlertCircle className="w-4 h-4" />
+                                            {validationErrors.length} Kesalahan Ditemukan
+                                        </h4>
+                                        <div className="space-y-2 max-h-40 overflow-y-auto pr-4">
+                                            {validationErrors.map((err, idx) => (
+                                                <div key={idx} className="flex gap-2 text-xs font-bold text-red-600/80 bg-white p-2 rounded-lg border border-red-50 shadow-sm">
+                                                    <span className="text-red-300">#Baris {err.row}:</span> {err.error}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Preview Data Ujian</h3>
+                                        <Badge variant="outline" className="rounded-lg border-slate-200 font-bold px-3 py-1">{previewData.length} Baris Pertama</Badge>
+                                    </div>
+                                    <div className="border border-slate-100 rounded-[1.5rem] overflow-hidden bg-white shadow-sm">
                                         <div className="overflow-x-auto">
                                             <table className="w-full text-sm">
-                                                <thead className="bg-slate-100">
-                                                    <tr>
-                                                        <th className="px-4 py-3 text-left">No</th>
-                                                        <th className="px-4 py-3 text-left">Pertanyaan</th>
-                                                        <th className="px-4 py-3 text-left">Tipe</th>
-                                                        <th className="px-4 py-3 text-left">Kunci</th>
-                                                        <th className="px-4 py-3 text-left">Bobot</th>
+                                                <thead>
+                                                    <tr className="bg-slate-50/50 border-b border-slate-100">
+                                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">No</th>
+                                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Butir Pertanyaan Preview</th>
+                                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Tipe</th>
+                                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Kunci</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody>
+                                                <tbody className="divide-y divide-slate-50">
                                                     {previewData.map((row, idx) => (
-                                                        <tr key={idx} className="border-t hover:bg-slate-50">
-                                                            <td className="px-4 py-3">{row.No}</td>
-                                                            <td className="px-4 py-3">
-                                                                {row.Pertanyaan.substring(0, 50)}...
+                                                        <tr key={idx} className="h-14">
+                                                            <td className="px-6 py-4 text-center font-bold text-slate-400 text-xs">{row.No}</td>
+                                                            <td className="px-6 py-4 font-bold text-slate-800 truncate max-w-[400px]">{row.Pertanyaan}</td>
+                                                            <td className="px-6 py-4 text-center">
+                                                                <Badge className="bg-slate-100 text-slate-600 border-none font-bold text-[10px] uppercase tracking-widest">{row.Tipe}</Badge>
                                                             </td>
-                                                            <td className="px-4 py-3">
-                                                                <Badge>{row.Tipe}</Badge>
-                                                            </td>
-                                                            <td className="px-4 py-3">{row.Kunci}</td>
-                                                            <td className="px-4 py-3">{row.Bobot}</td>
+                                                            <td className="px-6 py-4 text-center font-mono font-bold text-indigo-600">{row.Kunci}</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -445,75 +386,51 @@ export default function QuestionImporter({ onClose, onSuccess }: QuestionImporte
                                         </div>
                                     </div>
                                 </div>
-                            )}
 
-                            {/* Action Buttons */}
-                            <div className="flex items-center justify-end gap-3">
-                                <Button
-                                    variant="ghost"
-                                    onClick={() => {
-                                        setFile(null);
-                                        setPreviewData([]);
-                                        setValidationErrors([]);
-                                    }}
-                                >
-                                    Batal
-                                </Button>
-                                <Button
-                                    onClick={handleImport}
-                                    disabled={isProcessing || validationErrors.length > 0 || previewData.length === 0}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                                >
-                                    {isProcessing ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                            Mengimport...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <CheckCircle2 className="w-4 h-4 mr-2" />
-                                            Import {previewData.length} Soal
-                                        </>
-                                    )}
-                                </Button>
-                            </div>
-                        </div>
-                    )}
+                                <div className="pt-6 mt-4 border-t border-slate-100 flex flex-col-reverse sm:flex-row items-center justify-end gap-3">
+                                    <Button variant="ghost" className="w-full sm:w-auto px-8 text-slate-500 font-semibold" onClick={onClose}>Batal</Button>
+                                    <Button
+                                        onClick={handleImport}
+                                        disabled={isProcessing || validationErrors.length > 0 || previewData.length === 0}
+                                        className="w-full sm:w-auto px-8 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl shadow-lg shadow-slate-200/50 transition-all"
+                                    >
+                                        {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                                        Mulai Import Massal
+                                    </Button>
+                                </div>
+                            </motion.div>
+                        )}
 
-                    {/* Import Result */}
-                    {importResult && (
-                        <div className="text-center py-12">
-                            {importResult.success ? (
-                                <>
-                                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <CheckCircle2 className="w-12 h-12 text-green-600" />
-                                    </div>
-                                    <h3 className="text-2xl font-bold text-green-900 mb-2">
-                                        Import Berhasil!
-                                    </h3>
-                                    <p className="text-green-700">
-                                        {importResult.successCount} soal berhasil ditambahkan ke database
-                                    </p>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <AlertCircle className="w-12 h-12 text-red-600" />
-                                    </div>
-                                    <h3 className="text-2xl font-bold text-red-900 mb-2">
-                                        Import Gagal
-                                    </h3>
-                                    <div className="text-red-700 space-y-1">
-                                        {importResult.errors.map((err, idx) => (
-                                            <p key={idx}>
-                                                {err.row > 0 ? `Baris ${err.row}: ` : ''}{err.error}
-                                            </p>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    )}
+                        {importResult && (
+                            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-20 space-y-6">
+                                {importResult.success ? (
+                                    <>
+                                        <div className="w-24 h-24 bg-emerald-50 text-emerald-500 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner border border-emerald-100/50 scale-110">
+                                            <CheckCircle2 className="w-12 h-12" />
+                                        </div>
+                                        <h3 className="text-3xl font-black text-slate-900 tracking-tight">Sinkronisasi Berhasil!</h3>
+                                        <p className="text-slate-500 font-medium max-w-sm mx-auto leading-relaxed"><span className="font-black text-emerald-600">{importResult.successCount} soal</span> telah dipublikasikan ke dalam sistem bank soal.</p>
+                                        <div className="pt-8">
+                                            <Button onClick={() => { onSuccess(); onClose(); }} className="h-12 px-12 bg-slate-900 text-white font-black rounded-2xl shadow-xl">Kembali ke Dashboard</Button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="w-24 h-24 bg-red-50 text-red-500 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner border border-red-100/50">
+                                            <AlertCircle className="w-12 h-12" />
+                                        </div>
+                                        <h3 className="text-3xl font-black text-slate-900 tracking-tight">Import Terganggu</h3>
+                                        <div className="max-w-md mx-auto space-y-2 mt-4">
+                                            {importResult.errors.map((err, idx) => (
+                                                <p key={idx} className="text-sm font-bold text-red-600 bg-red-50 p-3 rounded-xl border border-red-100">{err.error}</p>
+                                            ))}
+                                        </div>
+                                        <Button onClick={() => setImportResult(null)} className="mt-8 h-12 px-12 border-slate-200 border-2 font-black rounded-2xl text-slate-600">Coba Lagi</Button>
+                                    </>
+                                )}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             </motion.div>
         </motion.div>

@@ -22,6 +22,12 @@ export interface Database {
                     name: string
                     license_status: boolean
                     logo_url: string | null
+                    exam_token: string | null
+                    active_packets: {
+                        paket_a: boolean
+                        paket_b: boolean
+                        paket_c: boolean
+                    } | null
                     created_at: string
                 }
                 Insert: {
@@ -29,6 +35,12 @@ export interface Database {
                     name: string
                     license_status?: boolean
                     logo_url?: string | null
+                    exam_token?: string | null
+                    active_packets?: {
+                        paket_a: boolean
+                        paket_b: boolean
+                        paket_c: boolean
+                    } | null
                     created_at?: string
                 }
                 Update: {
@@ -36,6 +48,12 @@ export interface Database {
                     name?: string
                     license_status?: boolean
                     logo_url?: string | null
+                    exam_token?: string | null
+                    active_packets?: {
+                        paket_a: boolean
+                        paket_b: boolean
+                        paket_c: boolean
+                    } | null
                     created_at?: string
                 }
             }
@@ -44,6 +62,7 @@ export interface Database {
                     id: string
                     school_id: string
                     full_name: string
+                    username: string | null // Login username (separate from full_name)
                     role: 'ADMIN' | 'STUDENT'
                     class_group: string | null
                     photo_url: string | null
@@ -61,6 +80,7 @@ export interface Database {
                     id: string
                     school_id: string
                     full_name: string
+                    username?: string | null
                     role?: 'ADMIN' | 'STUDENT'
                     class_group?: string | null
                     photo_url?: string | null
@@ -77,6 +97,7 @@ export interface Database {
                     id?: string
                     school_id?: string
                     full_name?: string
+                    username?: string | null
                     role?: 'ADMIN' | 'STUDENT'
                     class_group?: string | null
                     photo_url?: string | null
@@ -102,6 +123,8 @@ export interface Database {
                     bobot: number
                     kategori: string | null
                     paket: string | null
+                    packet_type: 'A' | 'B' | 'C' | null
+                    class_level: string | null
                     created_at: string
                     updated_at: string
                 }
@@ -117,6 +140,8 @@ export interface Database {
                     bobot?: number
                     kategori?: string | null
                     paket?: string | null
+                    packet_type?: 'A' | 'B' | 'C' | null
+                    class_level?: string | null
                     created_at?: string
                     updated_at?: string
                 }
@@ -132,6 +157,8 @@ export interface Database {
                     bobot?: number
                     kategori?: string | null
                     paket?: string | null
+                    packet_type?: 'A' | 'B' | 'C' | null
+                    class_level?: string | null
                     created_at?: string
                     updated_at?: string
                 }

@@ -41,9 +41,9 @@ export default function LoginPage() {
                 setTimeRemaining(durationMinutes * 60);
                 setIsExamStarted(true);
 
-                // Check if PIN is required (TODO: Move to config table)
-                // For now, skip PIN verification and go directly to exam
-                router.push('/exam');
+                // Redirect to token verification page (Gatekeeper)
+                // Student must enter valid token before entering exam
+                router.push('/pin-verify');
             } else {
                 setError(response.message || 'Login gagal');
             }

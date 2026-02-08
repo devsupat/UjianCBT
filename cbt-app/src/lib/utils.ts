@@ -69,3 +69,34 @@ export function shuffleArray<T>(array: T[]): T[] {
     }
     return result;
 }
+
+/**
+ * Detect exam packet (A/B/C) from class name
+ * - Paket A = SD (grades 1-6)
+ * - Paket B = SMP (grades VII-IX or 7-9)
+ * - Paket C = SMA (grades X-XII or 10-12)
+ * 
+ * @param className - e.g., "VII/A", "VIII-B", "Kelas 9", "X IPA 1", etc.
+ * @returns 'A' | 'B' | 'C'
+ */
+export function detectPacket(className: string): 'A' | 'B' | 'C' {
+    if (!className) return 'B'; // Default to SMP if no class
+
+    const cls = className.toUpperCase().trim();
+
+    // SMA: X, XI, XII, 10, 11, 12 (check first to avoid X matching in other contexts)
+    // Use word boundaries to match exact grade numbers
+    if (/\bXII\b/.test(cls) || /\bXI\b/.test(cls) || /\bX\b/.test(cls)) return 'C';
+    if (/\b12\b/.test(cls) || /\b11\b/.test(cls) || /\b10\b/.test(cls)) return 'C';
+
+    // SMP: VII, VIII, IX, 7, 8, 9
+    if (/\bIX\b/.test(cls) || /\bVIII\b/.test(cls) || /\bVII\b/.test(cls)) return 'B';
+    if (/\b9\b/.test(cls) || /\b8\b/.test(cls) || /\b7\b/.test(cls)) return 'B';
+
+    // SD: 1-6 (after excluding 10-12)
+    if (/\b[1-6]\b/.test(cls) || /SD/i.test(cls)) return 'A';
+
+    // Default to SMP (most common school type in Indonesia)
+    return 'B';
+}
+

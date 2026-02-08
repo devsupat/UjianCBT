@@ -14,15 +14,31 @@ import {
     Image as ImageIcon,
     Check,
     Package,
-    Upload
+    Upload,
+    Search,
+    FileText,
+    CheckCircle2,
+    Hash,
+    ChevronRight,
+    SearchX,
+    AlertTriangle
 } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { createQuestion, updateQuestion, deleteQuestion } from '@/lib/api';
-import { fetchQuestions } from '@/lib/queries';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { createQuestion, updateQuestion, deleteQuestion, fetchQuestions } from '@/lib/queries';
 import type { Question } from '@/types';
 import { truncate } from '@/lib/utils';
 import TrueFalseMultiEditor from '@/components/TrueFalseMultiEditor';
@@ -37,6 +53,16 @@ export default function QuestionsManagement() {
     const [showImporter, setShowImporter] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState<QuestionWithKey | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Delete confirmation state
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [questionToDelete, setQuestionToDelete] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    // Toast state
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
     const [formData, setFormData] = useState({
         id_soal: '',
         nomor_urut: 1,
@@ -52,25 +78,13 @@ export default function QuestionsManagement() {
         bobot: 1,
         kategori: '',
         paket: '',
-        // TRUE_FALSE_MULTI specific fields
         statements_json: [''] as string[],
         answer_json: [true] as boolean[]
     });
 
-    // Available package options for question assignment
-    const paketOptions = [
-        { value: '', label: 'Tanpa Paket' },
-        { value: 'Paket1', label: 'Paket 1' },
-        { value: 'Paket2', label: 'Paket 2' },
-        { value: 'Paket3', label: 'Paket 3' },
-        { value: 'Paket4', label: 'Paket 4' },
-        { value: 'Paket5', label: 'Paket 5' },
-    ];
-
-    // Use Supabase query instead of legacy API
     const { data: questions = [], isLoading, mutate } = useSWR<Question[]>(
         'adminQuestions',
-        fetchQuestions
+        () => fetchQuestions()  // Arrow function to prevent SWR from passing key as argument
     );
 
     const resetForm = () => {
@@ -129,13 +143,10 @@ export default function QuestionsManagement() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
         if (!formData.pertanyaan.trim()) {
             alert('Pertanyaan harus diisi');
             return;
         }
-
-        // Validation for SINGLE and COMPLEX - require options and answer key
         if (formData.tipe !== 'TRUE_FALSE_MULTI') {
             if (!formData.opsi_a.trim() || !formData.opsi_b.trim()) {
                 alert('Minimal opsi A dan B harus diisi');
@@ -146,7 +157,6 @@ export default function QuestionsManagement() {
                 return;
             }
         } else {
-            // Validation for TRUE_FALSE_MULTI - require at least one non-empty statement
             const hasValidStatement = formData.statements_json.some(s => s.trim() !== '');
             if (!hasValidStatement) {
                 alert('Minimal satu pernyataan harus diisi');
@@ -155,33 +165,50 @@ export default function QuestionsManagement() {
         }
 
         setIsSubmitting(true);
-
         try {
             if (editingQuestion) {
                 await updateQuestion(editingQuestion.id_soal, formData);
+                showToast('Berhasil! Soal telah diperbarui.', 'success');
             } else {
                 await createQuestion(formData);
+                showToast('Berhasil! Soal telah ditambahkan.', 'success');
             }
-
             mutate();
             handleCloseModal();
         } catch (error) {
             console.error('Save failed:', error);
-            alert('Gagal menyimpan soal');
+            showToast('Gagal menyimpan soal. Silakan coba lagi.', 'error');
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const handleDelete = async (id_soal: string) => {
-        if (!confirm('Yakin hapus soal ini? Tidak bisa di-undo.')) return;
+    // Toast helper
+    const showToast = (message: string, type: 'success' | 'error') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 4000);
+    };
 
+    // Delete confirmation flow
+    const handleDeleteClick = (id_soal: string) => {
+        setQuestionToDelete(id_soal);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!questionToDelete) return;
+        setIsDeleting(true);
         try {
-            await deleteQuestion(id_soal);
+            await deleteQuestion(questionToDelete);
             mutate();
+            showToast('Berhasil! Soal telah dihapus.', 'success');
         } catch (error) {
             console.error('Delete failed:', error);
-            alert('Gagal menghapus soal');
+            showToast('Gagal menghapus soal. Silakan coba lagi.', 'error');
+        } finally {
+            setIsDeleting(false);
+            setDeleteDialogOpen(false);
+            setQuestionToDelete(null);
         }
     };
 
@@ -197,272 +224,421 @@ export default function QuestionsManagement() {
         }
     };
 
-    const headerActions = (
-        <div className="flex items-center gap-3">
-            <Button
-                onClick={() => setShowImporter(true)}
-                variant="outline"
-                className="border-blue-300 text-blue-700 hover:bg-blue-50 shadow-sm"
-            >
-                <Upload className="w-4 h-4 mr-2" />
-                Import Excel
-            </Button>
-            <Button
-                onClick={() => handleOpenModal()}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/30 border-0"
-            >
-                <Plus className="w-4 h-4 mr-2" />
-                Tambah Soal
-            </Button>
-        </div>
+    const filteredQuestions = questions.filter(q =>
+        q.pertanyaan.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        q.id_soal.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        q.kategori?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return (
         <AdminLayout
-            title="Kelola Soal"
-            subtitle="Manajemen bank soal ujian"
-            headerActions={headerActions}
+            title="Bank Soal"
+            subtitle="Kelola materi ujian, tipe soal, dan kunci jawaban sistem."
+            headerActions={
+                <div className="flex items-center gap-3">
+                    <Button
+                        variant="outline"
+                        onClick={() => setShowImporter(true)}
+                        className="h-11 border-slate-200 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 transition-all font-bold px-6"
+                    >
+                        <Upload className="w-4 h-4 mr-2" />
+                        Import Berkas
+                    </Button>
+                    <Button
+                        onClick={() => handleOpenModal()}
+                        className="h-11 w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white shadow-xl transition-all font-black uppercase tracking-widest text-[10px] px-8"
+                    >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Soal Baru
+                    </Button>
+                </div>
+            }
         >
-            <Card className="overflow-hidden shadow-xl ring-1 ring-slate-200/50 rounded-2xl border-0 lg:ml-8">
-                <div className="bg-gradient-to-r from-emerald-50/50 to-white px-8 py-6 border-b border-slate-100 flex items-center justify-between">
-                    <div>
-                        <h2 className="text-xl font-bold text-slate-800 mb-1">Bank Soal</h2>
-                        <p className="text-sm text-slate-500">Manajemen dan pengaturan soal ujian</p>
-                    </div>
-                    <Badge variant="outline" className="bg-white px-4 py-2 text-slate-700 border-slate-200 shadow-sm font-semibold">
-                        {questions.length} Soal
-                    </Badge>
+            <div className="space-y-8">
+
+                {/* Stats Dashboard */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <Card className="rounded-xl border border-gray-100 shadow-sm transition-all hover:shadow-md">
+                        <CardContent className="p-6">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                                    <FileQuestion className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Soal</p>
+                                    <p className="text-2xl font-bold text-slate-900">{questions.length}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="rounded-xl border border-gray-100 shadow-sm transition-all hover:shadow-md">
+                        <CardContent className="p-6">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                                    <CheckCircle2 className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Single</p>
+                                    <p className="text-2xl font-bold text-slate-900">{questions.filter(q => q.tipe === 'SINGLE').length}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="rounded-xl border border-gray-100 shadow-sm transition-all hover:shadow-md">
+                        <CardContent className="p-6">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                                    <Package className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Complex</p>
+                                    <p className="text-2xl font-bold text-slate-900">{questions.filter(q => q.tipe === 'COMPLEX').length}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="rounded-xl border border-gray-100 shadow-sm transition-all hover:shadow-md">
+                        <CardContent className="p-6">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
+                                    <FileText className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">T/F Multi</p>
+                                    <p className="text-2xl font-bold text-slate-900">{questions.filter(q => q.tipe === 'TRUE_FALSE_MULTI').length}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
-                <div className="overflow-x-auto">
-                    {isLoading ? (
-                        <div className="flex items-center justify-center py-24">
-                            <Loader2 className="w-12 h-12 animate-spin text-emerald-600" />
+                {/* Filter & Search */}
+                <Card className="rounded-xl border border-gray-100 shadow-sm bg-white p-6">
+                    <div className="flex flex-col md:flex-row items-center gap-6">
+                        <div className="relative flex-1 w-full group">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-slate-900 transition-colors" />
+                            <Input
+                                placeholder="Cari ID soal, kategori, atau isi pertanyaan..."
+                                className="h-10 pl-10 border-slate-200 focus:border-slate-900 rounded-xl bg-slate-50/30 transition-all font-medium"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
                         </div>
-                    ) : questions.length === 0 ? (
-                        <div className="text-center py-24 text-slate-500">
-                            <div className="w-20 h-20 mx-auto mb-6 p-4 bg-slate-100 rounded-full flex items-center justify-center">
-                                <FileQuestion className="w-10 h-10 opacity-40" />
-                            </div>
-                            <p className="text-lg font-medium text-slate-600 mb-2">Belum ada soal</p>
-                            <p className="text-sm text-slate-400 mb-6">Mulai dengan menambahkan soal pertama</p>
-                            <Button
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/30"
-                                onClick={() => handleOpenModal()}
-                            >
-                                <Plus className="w-4 h-4 mr-2" />
-                                Tambah Soal Pertama
-                            </Button>
+                        <div className="text-xs font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-4 py-2 rounded-lg border border-slate-100">
+                            {filteredQuestions.length} Items
                         </div>
-                    ) : (
-                        <table className="w-full">
-                            <thead className="bg-slate-50/80 border-b border-slate-100">
-                                <tr>
-                                    <th className="px-8 py-5 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">No</th>
-                                    <th className="px-8 py-5 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Pertanyaan</th>
-                                    <th className="px-8 py-5 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Tipe</th>
-                                    <th className="px-8 py-5 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Bobot</th>
-                                    <th className="px-8 py-5 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Gambar</th>
-                                    <th className="px-8 py-5 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">Actions</th>
+                    </div>
+                </Card>
+
+                {/* Questions Table */}
+                <Card className="rounded-xl border border-gray-100 shadow-sm bg-white overflow-hidden">
+                    <div className="rounded-lg border bg-white overflow-x-auto">
+                        <table className="w-full text-left border-collapse min-w-[800px]">
+                            <thead>
+                                <tr className="bg-slate-50/50 border-b border-gray-100 h-12">
+                                    <th className="px-6 py-4 text-xs uppercase tracking-widest font-bold text-slate-400 text-center w-16">#</th>
+                                    <th className="px-6 py-4 text-xs uppercase tracking-widest font-bold text-slate-400">Konten Pertanyaan</th>
+                                    <th className="px-6 py-4 text-xs uppercase tracking-widest font-bold text-slate-400 text-center">Tipe</th>
+                                    <th className="px-6 py-4 text-xs uppercase tracking-widest font-bold text-slate-400 text-center">Bobot</th>
+                                    <th className="px-6 py-4 text-xs uppercase tracking-widest font-bold text-slate-400 text-center w-20">Media</th>
+                                    <th className="px-6 py-4 text-xs uppercase tracking-widest font-bold text-slate-400 text-right">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-50">
-                                {questions.map((question) => (
-                                    <tr key={question.id_soal} className="group hover:bg-slate-50/80 transition-colors">
-                                        <td className="px-8 py-5 font-mono text-slate-600 font-semibold">
-                                            {question.nomor_urut}
-                                        </td>
-                                        <td className="px-8 py-5">
-                                            <span className="font-medium text-slate-800 group-hover:text-emerald-600 transition-colors">{truncate(question.pertanyaan, 60)}</span>
-                                        </td>
-                                        <td className="px-8 py-5 text-center">
-                                            <Badge variant={question.tipe === 'COMPLEX' ? 'warning' : 'default'} className="shadow-sm">
-                                                {question.tipe}
-                                            </Badge>
-                                        </td>
-                                        <td className="px-8 py-5 text-center text-slate-700 font-semibold">{question.bobot}</td>
-                                        <td className="px-8 py-5 text-center">
-                                            {question.gambar_url ? (
-                                                <div className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-50">
-                                                    <ImageIcon className="w-4 h-4 text-emerald-600" />
-                                                </div>
-                                            ) : (
-                                                <span className="text-slate-300">-</span>
-                                            )}
-                                        </td>
-                                        <td className="px-8 py-5 text-right">
-                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleOpenModal(question as QuestionWithKey)}
-                                                    className="h-9 w-9 hover:bg-blue-50 hover:text-blue-700 rounded-lg"
-                                                    title="Edit"
-                                                >
-                                                    <Pencil className="w-4 h-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleDelete(question.id_soal)}
-                                                    className="h-9 w-9 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                                                    title="Hapus"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
-                                            </div>
+                            <tbody className="divide-y divide-gray-100">
+                                {isLoading ? (
+                                    <tr>
+                                        <td colSpan={6} className="py-24 text-center">
+                                            <Loader2 className="w-8 h-8 animate-spin text-slate-300 mx-auto" />
+                                            <p className="text-slate-400 font-bold mt-4 tracking-wider text-xs uppercase">Sinkronisasi Bank Soal...</p>
                                         </td>
                                     </tr>
-                                ))}
+                                ) : filteredQuestions.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={6} className="py-24 text-center">
+                                            <div className="w-16 h-16 bg-slate-50 flex items-center justify-center rounded-full mx-auto mb-4">
+                                                <SearchX className="w-8 h-8 text-slate-200" />
+                                            </div>
+                                            <p className="text-slate-500 font-bold">Soal Tidak Ditemukan</p>
+                                            <p className="text-slate-400 text-sm">Gunakan kriteria pencarian lain atau buat soal baru.</p>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    filteredQuestions.map((question) => (
+                                        <tr key={question.id_soal} className="h-20 hover:bg-slate-50/50 transition-colors group">
+                                            <td className="px-6 py-4 text-center">
+                                                <span className="text-xs font-bold text-slate-300">#{question.nomor_urut}</span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="max-w-md">
+                                                    <p className="font-bold text-slate-900 tracking-tight line-clamp-2 leading-relaxed">{question.pertanyaan}</p>
+                                                    <div className="flex items-center gap-2 mt-2">
+                                                        <div className="px-2 py-0.5 rounded-md bg-slate-100 text-[10px] font-black text-slate-500 uppercase tracking-widest border border-slate-200">
+                                                            {question.kategori || 'GENERAL'}
+                                                        </div>
+                                                        <span className="text-[10px] text-slate-300 font-mono">{question.id_soal}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <Badge
+                                                    variant="outline"
+                                                    className={`rounded-lg px-2.5 py-1 text-[10px] font-black tracking-widest shadow-none ${question.tipe === 'COMPLEX' ? 'border-amber-200 text-amber-600 bg-amber-50/50' :
+                                                        question.tipe === 'TRUE_FALSE_MULTI' ? 'border-purple-200 text-purple-600 bg-purple-50/50' :
+                                                            'border-blue-200 text-blue-600 bg-blue-50/50'
+                                                        }`}
+                                                >
+                                                    {question.tipe}
+                                                </Badge>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <div className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-50 text-slate-700 font-bold text-xs border border-slate-100">
+                                                    {question.bobot}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                {question.gambar_url ? (
+                                                    <div className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-100">
+                                                        <ImageIcon className="w-4 h-4 text-emerald-600" />
+                                                    </div>
+                                                ) : (
+                                                    <div className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-slate-50 border border-slate-100">
+                                                        <X className="w-3 h-3 text-slate-200" />
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex items-center justify-end gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleOpenModal(question as QuestionWithKey)}
+                                                        className="h-9 w-9 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all"
+                                                    >
+                                                        <Pencil className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleDeleteClick(question.id_soal)}
+                                                        className="h-9 w-9 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
                             </tbody>
                         </table>
-                    )}
-                </div>
-            </Card>
+                    </div>
+                </Card>
 
-            {/* Modal */}
-            <AnimatePresence>
-                {showModal && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-50 flex items-start md:items-center justify-center overflow-y-auto px-4 py-6 md:py-10"
-                    >
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-gradient-to-br from-white via-white to-slate-50 rounded-3xl w-full max-w-[1100px] shadow-[0_25px_80px_-12px_rgba(0,0,0,0.25)] ring-1 ring-white/80"
-                        >
-                            {/* --- HEADER --- */}
-                            <div className="relative overflow-hidden px-6 sm:px-8 md:px-12 py-6 md:py-8 border-b border-slate-200/60">
-                                <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent"></div>
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-400/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                                <div className="relative flex items-center justify-between">
-                                    <div>
-                                        <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight">
-                                            {editingQuestion ? 'Edit Soal' : 'Tambah Soal Baru'}
-                                        </h2>
-                                        <p className="text-sm text-slate-500 mt-1">
-                                            {editingQuestion ? 'Ubah detail dan konten soal terpilih' : 'Buat soal baru untuk bank soal ujian'}
-                                        </p>
-                                    </div>
-                                    <Button variant="ghost" size="sm" onClick={handleCloseModal} className="h-10 w-10 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all">
-                                        <X className="w-5 h-5" />
-                                    </Button>
-                                </div>
-                            </div>
-
-                            {/* --- FORM BODY --- */}
-                            <form onSubmit={handleSubmit} className="px-6 sm:px-8 md:px-12 py-6 md:py-8 max-h-[72vh] overflow-y-auto">
-                                <div className="grid grid-cols-1 lg:grid-cols-[6fr_4fr] gap-10 items-start">
-
-                                    {/* LEFT COLUMN: INFORMATION & CONTENT */}
-                                    <div className="space-y-7">
-                                        {/* SECTION 1: Informasi Soal */}
-                                        <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200/60 hover:shadow-md transition-shadow">
-                                            <div className="flex items-center gap-3 mb-5">
-                                                <div className="w-1.5 h-6 bg-gradient-to-b from-emerald-400 to-emerald-600 rounded-full"></div>
-                                                <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Informasi Soal</h3>
-                                            </div>
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-                                                <div className="space-y-2">
-                                                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">ID Soal</label>
-                                                    <Input
-                                                        value={formData.id_soal}
-                                                        onChange={(e) => setFormData({ ...formData, id_soal: e.target.value })}
-                                                        disabled={!!editingQuestion}
-                                                        placeholder="Q-001"
-                                                        className="h-12 px-4 bg-slate-50 border-slate-200 focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 rounded-xl text-sm font-semibold transition-all"
-                                                    />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Nomor Urut</label>
-                                                    <Input
-                                                        type="number"
-                                                        value={formData.nomor_urut}
-                                                        onChange={(e) => setFormData({ ...formData, nomor_urut: parseInt(e.target.value) || 1 })}
-                                                        className="h-12 px-4 bg-slate-50 border-slate-200 focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 rounded-xl text-sm font-semibold transition-all"
-                                                    />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tipe Soal</label>
-                                                    <div className="relative">
-                                                        <select
-                                                            className="w-full h-12 rounded-xl border border-slate-200 bg-slate-50 px-4 pr-10 text-sm font-semibold text-slate-700 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 focus:bg-white outline-none transition-all appearance-none cursor-pointer"
-                                                            value={formData.tipe}
-                                                            onChange={(e) => setFormData({
-                                                                ...formData,
-                                                                tipe: e.target.value as 'SINGLE' | 'COMPLEX' | 'TRUE_FALSE_MULTI',
-                                                                kunci_jawaban: '',
-                                                                statements_json: e.target.value === 'TRUE_FALSE_MULTI' ? [''] : formData.statements_json,
-                                                                answer_json: e.target.value === 'TRUE_FALSE_MULTI' ? [true] : formData.answer_json
-                                                            })}
-                                                        >
-                                                            <option value="SINGLE">Pilihan Ganda</option>
-                                                            <option value="COMPLEX">Ganda Kompleks</option>
-                                                            <option value="TRUE_FALSE_MULTI">Benar / Salah</option>
-                                                        </select>
-                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                                            <Plus className="w-4 h-4 rotate-45" />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                                                        <Package className="w-3.5 h-3.5 text-indigo-500" />
-                                                        Paket Soal
-                                                    </label>
-                                                    <div className="relative">
-                                                        <select
-                                                            className="w-full h-12 rounded-xl border border-indigo-200 bg-indigo-50/50 px-4 pr-10 text-sm font-semibold text-slate-700 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 focus:bg-white outline-none transition-all appearance-none cursor-pointer"
-                                                            value={formData.paket}
-                                                            onChange={(e) => setFormData({ ...formData, paket: e.target.value })}
-                                                        >
-                                                            {paketOptions.map((option) => (
-                                                                <option key={option.value} value={option.value}>
-                                                                    {option.label}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-indigo-400">
-                                                            <Plus className="w-4 h-4 rotate-45" />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                {/* Editor Modal - MAXIMIZED FOR DESKTOP */}
+                <AnimatePresence>
+                    {showModal && (
+                        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="bg-white rounded-2xl w-[90vw] max-w-[1200px] h-[85vh] shadow-2xl border border-gray-200 overflow-hidden flex flex-col"
+                            >
+                                {/* Modal Header */}
+                                <div className="px-10 py-6 border-b border-gray-100 bg-gray-50/50 shrink-0">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h2 className="text-2xl font-bold tracking-tight text-gray-900">
+                                                {editingQuestion ? 'Perbarui Soal' : 'Buat Soal Baru'}
+                                            </h2>
+                                            <p className="text-base text-gray-500 mt-1">
+                                                Konfigurasi materi pertanyaan, opsi jawaban, dan kategorisasi.
+                                            </p>
                                         </div>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={handleCloseModal}
+                                            className="h-10 w-10 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+                                        >
+                                            <X className="w-5 h-5" />
+                                        </Button>
+                                    </div>
+                                </div>
 
-                                        {/* SECTION 2: Isi Pertanyaan */}
-                                        <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200/60 hover:shadow-md transition-shadow">
-                                            <div className="flex items-center gap-3 mb-5">
-                                                <div className="w-1.5 h-6 bg-gradient-to-b from-blue-400 to-blue-600 rounded-full"></div>
-                                                <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Isi Pertanyaan</h3>
-                                            </div>
-                                            <div className="space-y-4">
-                                                <div className="space-y-2">
-                                                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Narasi / Pertanyaan Utama</label>
-                                                    <textarea
-                                                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm min-h-[200px] leading-relaxed font-medium focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 focus:bg-white outline-none transition-all resize-y placeholder:text-slate-400"
-                                                        value={formData.pertanyaan}
-                                                        onChange={(e) => setFormData({ ...formData, pertanyaan: e.target.value })}
-                                                        placeholder="Tuliskan pertanyaan lengkap di sini..."
-                                                    />
+                                {/* Modal Body - Scrollable */}
+                                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
+                                    <div className="p-10">
+                                        {/* 2 COLUMN LAYOUT */}
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+
+                                            {/* COLUMN 1: Question Content */}
+                                            <div className="space-y-8">
+                                                {/* Administrative Data */}
+                                                <div className="space-y-5">
+                                                    <div className="flex items-center gap-3 mb-4">
+                                                        <div className="w-1.5 h-5 bg-blue-600 rounded-full" />
+                                                        <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
+                                                            Data Administratif
+                                                        </h3>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 gap-5">
+                                                        <div className="space-y-2">
+                                                            <label className="block text-sm font-semibold text-gray-700">ID Soal</label>
+                                                            <Input
+                                                                value={formData.id_soal}
+                                                                disabled={!!editingQuestion}
+                                                                className="h-12 px-4 text-base font-mono bg-gray-50"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <label className="block text-sm font-semibold text-gray-700">No Urut</label>
+                                                            <Input
+                                                                type="number"
+                                                                value={formData.nomor_urut}
+                                                                onChange={e => setFormData({ ...formData, nomor_urut: parseInt(e.target.value) })}
+                                                                className="h-12 px-4 text-base text-center font-bold"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        <label className="block text-sm font-semibold text-gray-700">Jenis Pertanyaan</label>
+                                                        <select
+                                                            className="flex h-12 w-full rounded-lg border border-gray-200 bg-white px-4 text-base text-gray-900 transition-all focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                                                            value={formData.tipe}
+                                                            onChange={e => setFormData({ ...formData, tipe: e.target.value as any, kunci_jawaban: '' })}
+                                                        >
+                                                            <option value="SINGLE">Pilihan Ganda Tunggal</option>
+                                                            <option value="COMPLEX">Pilihan Ganda Kompleks (Multi-jawaban)</option>
+                                                            <option value="TRUE_FALSE_MULTI">Benar / Salah Multi</option>
+                                                        </select>
+                                                    </div>
                                                 </div>
-                                                <div className="space-y-2">
-                                                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                                                        URL Gambar Pendukung <span className="text-slate-400 font-normal normal-case">(opsional)</span>
-                                                    </label>
-                                                    <div className="relative group">
+
+                                                {/* Question Narrative */}
+                                                <div className="space-y-5">
+                                                    <div className="flex items-center gap-3 mb-4">
+                                                        <div className="w-1.5 h-5 bg-purple-600 rounded-full" />
+                                                        <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
+                                                            Narasi Pertanyaan
+                                                        </h3>
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        <label className="block text-sm font-semibold text-gray-700">Isi Butir Pertanyaan</label>
+                                                        <textarea
+                                                            className="w-full min-h-[200px] rounded-lg border border-gray-200 bg-white p-4 text-base text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all leading-relaxed resize-y"
+                                                            value={formData.pertanyaan}
+                                                            onChange={e => setFormData({ ...formData, pertanyaan: e.target.value })}
+                                                            placeholder="Tuliskan butir soal di sini... (Gunakan spasi ganda untuk paragraf baru)"
+                                                        />
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        <label className="block text-sm font-semibold text-gray-700">
+                                                            Lampiran Media (URL Gambar)
+                                                        </label>
                                                         <Input
                                                             value={formData.gambar_url}
-                                                            onChange={(e) => setFormData({ ...formData, gambar_url: e.target.value })}
-                                                            placeholder="https://drive.google.com/..."
-                                                            className="h-12 px-4 pr-12 bg-slate-50 border-slate-200 focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 rounded-xl text-sm transition-all"
+                                                            onChange={e => setFormData({ ...formData, gambar_url: e.target.value })}
+                                                            placeholder="https://storage.example.com/images/soal-001.png"
+                                                            className="h-12 px-4 text-base"
                                                         />
-                                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-emerald-500 transition-colors">
-                                                            <ImageIcon className="w-5 h-5" />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* COLUMN 2: Answers & Metadata */}
+                                            <div className="space-y-8">
+                                                {/* Answer Options or T/F Editor */}
+                                                {formData.tipe === 'TRUE_FALSE_MULTI' ? (
+                                                    <TrueFalseMultiEditor
+                                                        statements={formData.statements_json}
+                                                        answers={formData.answer_json}
+                                                        onStatementsChange={s => setFormData(prev => ({ ...prev, statements_json: s }))}
+                                                        onAnswersChange={a => setFormData(prev => ({ ...prev, answer_json: a }))}
+                                                    />
+                                                ) : (
+                                                    <div className="space-y-5">
+                                                        <div className="flex items-center gap-3 mb-4">
+                                                            <div className="w-1.5 h-5 bg-emerald-600 rounded-full" />
+                                                            <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
+                                                                Opsi Jawaban
+                                                            </h3>
+                                                        </div>
+
+                                                        <div className="space-y-3">
+                                                            {['A', 'B', 'C', 'D', 'E'].map(opt => {
+                                                                const key = `opsi_${opt.toLowerCase()}` as keyof typeof formData;
+                                                                const isChecked = formData.tipe === 'COMPLEX'
+                                                                    ? formData.kunci_jawaban.split(',').includes(opt)
+                                                                    : formData.kunci_jawaban === opt;
+
+                                                                return (
+                                                                    <div
+                                                                        key={opt}
+                                                                        className={`flex items-center gap-4 p-3 rounded-xl border-2 transition-all ${isChecked
+                                                                            ? 'border-emerald-400 bg-emerald-50'
+                                                                            : 'border-gray-200 bg-white hover:border-gray-300'
+                                                                            }`}
+                                                                    >
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => handleKeySelection(opt)}
+                                                                            className={`w-11 h-11 rounded-lg flex items-center justify-center font-bold text-base transition-all shrink-0 ${isChecked
+                                                                                ? 'bg-emerald-600 text-white shadow-md'
+                                                                                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                                                                }`}
+                                                                        >
+                                                                            {opt}
+                                                                        </button>
+                                                                        <Input
+                                                                            value={formData[key] as string}
+                                                                            onChange={e => setFormData({ ...formData, [key]: e.target.value })}
+                                                                            placeholder={`Isi opsi ${opt}...`}
+                                                                            className="h-11 border-0 bg-transparent shadow-none text-base font-medium text-gray-900 placeholder:text-gray-400 focus:ring-0 flex-1"
+                                                                        />
+                                                                        {isChecked && <Check className="w-5 h-5 text-emerald-600 shrink-0" />}
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+
+                                                        <p className="text-sm text-center text-gray-500 bg-gray-50 py-3 rounded-lg border border-gray-100">
+                                                            💡 Klik huruf <strong>[A-E]</strong> untuk menandai sebagai kunci jawaban
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {/* Metadata */}
+                                                <div className="space-y-5">
+                                                    <div className="flex items-center gap-3 mb-4">
+                                                        <div className="w-1.5 h-5 bg-gray-800 rounded-full" />
+                                                        <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
+                                                            Metadata Ujian
+                                                        </h3>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 gap-5">
+                                                        <div className="space-y-2">
+                                                            <label className="block text-sm font-semibold text-gray-700">Bobot Skor</label>
+                                                            <Input
+                                                                type="number"
+                                                                value={formData.bobot}
+                                                                onChange={e => setFormData({ ...formData, bobot: parseInt(e.target.value) })}
+                                                                className="h-12 px-4 text-base text-center font-bold"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <label className="block text-sm font-semibold text-gray-700">Kategori</label>
+                                                            <Input
+                                                                value={formData.kategori}
+                                                                onChange={e => setFormData({ ...formData, kategori: e.target.value })}
+                                                                placeholder="Literasi, Numerasi, dll"
+                                                                className="h-12 px-4 text-base"
+                                                            />
                                                         </div>
                                                     </div>
                                                 </div>
@@ -470,131 +646,112 @@ export default function QuestionsManagement() {
                                         </div>
                                     </div>
 
-                                    {/* RIGHT COLUMN: ANSWERS & SETTINGS */}
-                                    <div className="space-y-7">
-                                        {/* SECTION 3: Jawaban Kunci */}
-                                        {formData.tipe === 'TRUE_FALSE_MULTI' ? (
-                                            <TrueFalseMultiEditor
-                                                statements={formData.statements_json}
-                                                answers={formData.answer_json}
-                                                onStatementsChange={(statements) => setFormData(prev => ({ ...prev, statements_json: statements }))}
-                                                onAnswersChange={(answers) => setFormData(prev => ({ ...prev, answer_json: answers }))}
-                                            />
-                                        ) : (
-                                            <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200/60 hover:shadow-md transition-shadow">
-                                                <div className="flex items-center gap-3 mb-5">
-                                                    <div className="w-1.5 h-6 bg-gradient-to-b from-amber-400 to-amber-600 rounded-full"></div>
-                                                    <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Jawaban Kunci</h3>
-                                                </div>
-                                                <div className="space-y-4">
-                                                    {['A', 'B', 'C', 'D', 'E'].map((opt) => {
-                                                        const key = `opsi_${opt.toLowerCase()}` as keyof typeof formData;
-                                                        const isKey = formData.tipe === 'COMPLEX'
-                                                            ? formData.kunci_jawaban.split(',').includes(opt)
-                                                            : formData.kunci_jawaban === opt;
-
-                                                        return (
-                                                            <div key={opt} className="flex items-center gap-3">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleKeySelection(opt)}
-                                                                    className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold text-sm transition-all flex-shrink-0 ${isKey
-                                                                        ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-lg shadow-emerald-500/30 scale-105'
-                                                                        : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600'
-                                                                        }`}
-                                                                >
-                                                                    {opt}
-                                                                </button>
-                                                                <Input
-                                                                    value={formData[key] as string}
-                                                                    onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
-                                                                    placeholder={`Opsi ${opt}...`}
-                                                                    className={`h-11 px-4 text-sm bg-slate-50 focus:bg-white transition-all rounded-xl border ${isKey
-                                                                        ? 'border-emerald-300 ring-2 ring-emerald-100'
-                                                                        : 'border-slate-200 focus:border-emerald-400'
-                                                                        }`}
-                                                                />
-                                                            </div>
-                                                        );
-                                                    })}
-                                                    <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-100 text-xs text-slate-400">
-                                                        <Check className="w-4 h-4 text-emerald-500" />
-                                                        <span>Klik huruf untuk memilih kunci jawaban</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* SECTION 4: Pengaturan */}
-                                        <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200/60 hover:shadow-md transition-shadow">
-                                            <div className="flex items-center gap-3 mb-5">
-                                                <div className="w-1.5 h-6 bg-gradient-to-b from-purple-400 to-purple-600 rounded-full"></div>
-                                                <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Pengaturan</h3>
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div className="space-y-2">
-                                                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Bobot Skor</label>
-                                                    <Input
-                                                        type="number"
-                                                        value={formData.bobot}
-                                                        onChange={(e) => setFormData({ ...formData, bobot: parseInt(e.target.value) || 1 })}
-                                                        className="h-12 px-4 bg-slate-50 border-slate-200 focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 rounded-xl text-sm font-semibold transition-all"
-                                                    />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Kategori</label>
-                                                    <Input
-                                                        value={formData.kategori}
-                                                        onChange={(e) => setFormData({ ...formData, kategori: e.target.value })}
-                                                        placeholder="Numerasi"
-                                                        className="h-12 px-4 bg-slate-50 border-slate-200 focus:bg-white focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 rounded-xl text-sm font-semibold transition-all"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
+                                    {/* Modal Footer - Sticky */}
+                                    <div className="px-10 py-5 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-4 shrink-0">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={handleCloseModal}
+                                            className="h-12 px-8 min-w-[120px] font-semibold"
+                                        >
+                                            Batal
+                                        </Button>
+                                        <Button
+                                            type="submit"
+                                            disabled={isSubmitting}
+                                            className="h-12 px-8 min-w-[160px] bg-slate-900 hover:bg-slate-800 text-white font-semibold"
+                                        >
+                                            {isSubmitting ? (
+                                                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                            ) : (
+                                                <Save className="w-5 h-5 mr-2" />
+                                            )}
+                                            {editingQuestion ? 'Perbarui Soal' : 'Simpan Soal'}
+                                        </Button>
                                     </div>
-                                </div>
+                                </form>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
 
-                                {/* --- FOOTER --- */}
-                                <div className="flex items-center justify-end gap-4 pt-6 mt-6 border-t border-slate-100">
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        onClick={handleCloseModal}
-                                        className="h-11 px-6 rounded-xl font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all text-sm"
-                                    >
-                                        Batal
-                                    </Button>
-                                    <Button
-                                        type="submit"
-                                        disabled={isSubmitting}
-                                        className="h-11 px-8 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-xl font-semibold text-sm shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 active:scale-[0.98] disabled:opacity-50 transition-all flex items-center gap-2"
-                                    >
-                                        {isSubmitting ? (
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                        ) : (
-                                            <Save className="w-4 h-4" />
-                                        )}
-                                        {editingQuestion ? 'Perbarui Soal' : 'Simpan Soal'}
-                                    </Button>
-                                </div>
-                            </form>
+                {/* Import Modal */}
+                <AnimatePresence>
+                    {showImporter && (
+                        <QuestionImporter
+                            onClose={() => setShowImporter(false)}
+                            onSuccess={() => mutate()}
+                        />
+                    )}
+                </AnimatePresence>
+
+                {/* Delete Confirmation Dialog */}
+                <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center">
+                                <AlertTriangle className="w-7 h-7 text-amber-600" />
+                            </div>
+                            <AlertDialogTitle className="text-xl font-semibold text-gray-900">
+                                Hapus Soal Ini?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="text-[15px] leading-relaxed text-gray-600">
+                                Tindakan ini tidak dapat dibatalkan. Soal akan hilang permanen dari database sekolah Anda.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="mt-2">
+                            <AlertDialogCancel
+                                disabled={isDeleting}
+                                className="min-w-[100px]"
+                            >
+                                Batal
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={handleConfirmDelete}
+                                disabled={isDeleting}
+                                className="bg-red-600 hover:bg-red-700 text-white min-w-[100px]"
+                            >
+                                {isDeleting ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Menghapus...
+                                    </>
+                                ) : (
+                                    'Ya, Hapus'
+                                )}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+
+                {/* Toast Notifications */}
+                <AnimatePresence>
+                    {toast && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -20, x: 20 }}
+                            animate={{ opacity: 1, y: 0, x: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className={`fixed top-6 right-6 z-[100] flex items-center gap-3 px-5 py-4 rounded-xl border shadow-lg min-w-[320px] ${toast.type === 'success'
+                                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                                : 'bg-red-50 border-red-200 text-red-800'
+                                }`}
+                        >
+                            {toast.type === 'success' ? (
+                                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                            ) : (
+                                <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
+                            )}
+                            <span className="text-sm font-medium">{toast.message}</span>
+                            <button
+                                onClick={() => setToast(null)}
+                                className="ml-auto text-gray-400 hover:text-gray-600"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
                         </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Question Importer Modal */}
-            <AnimatePresence>
-                {showImporter && (
-                    <QuestionImporter
-                        onClose={() => setShowImporter(false)}
-                        onSuccess={() => {
-                            mutate(); // Refresh question list
-                        }}
-                    />
-                )}
-            </AnimatePresence>
+                    )}
+                </AnimatePresence>
+            </div>
         </AdminLayout>
     );
 }

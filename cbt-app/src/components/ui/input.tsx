@@ -1,5 +1,13 @@
-import * as React from "react";
-import { cn } from "@/lib/utils";
+import * as React from "react"
+import { cn } from "@/lib/utils"
+
+/**
+ * Input Component - CBT Admin 2.0
+ * Designed for teachers aged 35-50
+ * - Tall height (h-11) for easy clicking
+ * - Large text (text-base)
+ * - Clear focus states
+ */
 
 export interface InputProps
     extends React.InputHTMLAttributes<HTMLInputElement> { }
@@ -10,18 +18,26 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             <input
                 type={type}
                 className={cn(
-                    "flex h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-base text-slate-900 placeholder:text-slate-400 transition-all duration-200",
-                    "focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10",
-                    "disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-slate-100",
+                    // Base
+                    "flex h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-base text-gray-900",
+                    // Placeholder
+                    "placeholder:text-gray-400",
+                    // Focus
+                    "focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
+                    // Disabled
+                    "disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-gray-50",
+                    // File inputs
                     "file:border-0 file:bg-transparent file:text-sm file:font-medium",
+                    // Transition
+                    "transition-all duration-200",
                     className
                 )}
                 ref={ref}
                 {...props}
             />
-        );
+        )
     }
-);
-Input.displayName = "Input";
+)
+Input.displayName = "Input"
 
-export { Input };
+export { Input }

@@ -20,8 +20,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { getLiveScore, getUsers } from '@/lib/api';
-import type { LiveScoreEntry, LiveScoreStats, User } from '@/types';
+// MIGRATED: Use Supabase queries instead of legacy GAS API
+import { fetchStudentProfiles } from '@/lib/queries';
+import type { LiveScoreStats } from '@/types';
 
 const PIN_CODE = process.env.NEXT_PUBLIC_LIVE_SCORE_PIN || '2026';
 
@@ -82,99 +83,53 @@ export default function LiveScorePage() {
         return () => clearInterval(interval);
     }, [isBlocked]);
 
-    // Fetch live scores (finished students with accurate scores)
-    const { data: liveScoreData, isLoading: isLoadingScores } = useSWR<{
-        success: boolean;
-        data?: LiveScoreEntry[];
-        stats?: LiveScoreStats
-    }>(
-        isUnlocked ? 'liveScore' : null,
-        getLiveScore,
+    // Fetch all students directly from Supabase (includes all statuses)
+    const { data: studentsData, isLoading, mutate } = useSWR(
+        isUnlocked ? 'liveScoreStudents' : null,
+        fetchStudentProfiles,
         {
             refreshInterval: 3000,
             revalidateOnFocus: true,
         }
     );
 
-    // Fetch all users (includes SEDANG students for real-time racing)
-    const { data: usersData, isLoading: isLoadingUsers } = useSWR<{
-        success: boolean;
-        data?: User[];
-    }>(
-        isUnlocked ? 'allUsers' : null,
-        getUsers,
-        {
-            refreshInterval: 3000,
-            revalidateOnFocus: true,
-        }
-    );
-
-    const isLoading = isLoadingScores || isLoadingUsers;
-
-    // Merge data: combine liveScore (finished) with users (includes SEDANG)
+    // Build leaderboard from Supabase student profiles
     const leaderboard = useMemo((): LeaderboardEntry[] => {
-        const entries: LeaderboardEntry[] = [];
-        const addedNames = new Set<string>();
+        if (!studentsData || !Array.isArray(studentsData)) return [];
 
-        // First, add all users from getUsers (includes SEDANG students)
-        if (usersData?.data) {
-            usersData.data.forEach(user => {
-                if (user.status_ujian === 'SEDANG' || user.status_ujian === 'SELESAI' || user.status_ujian === 'DISKUALIFIKASI') {
-                    entries.push({
-                        id: user.id_siswa,
-                        nama: user.nama_lengkap,
-                        kelas: user.kelas,
-                        skor: user.skor_akhir || 0,
-                        status: user.status_ujian,
-                        waktu_selesai: user.waktu_selesai || undefined,
-                        isLive: user.status_ujian === 'SEDANG',
-                    });
-                    addedNames.add(user.nama_lengkap);
-                }
-            });
-        }
-
-        // Then update/add from liveScore data (more accurate scores for finished)
-        if (liveScoreData?.data) {
-            liveScoreData.data.forEach(score => {
-                const existingIndex = entries.findIndex(e => e.nama === score.nama);
-                if (existingIndex >= 0) {
-                    // Update with more accurate live score data
-                    entries[existingIndex].skor = score.skor;
-                    entries[existingIndex].status = score.status;
-                    entries[existingIndex].waktu_selesai = score.waktu_selesai;
-                    entries[existingIndex].isLive = score.status === 'SEDANG';
-                } else if (!addedNames.has(score.nama)) {
-                    entries.push({
-                        id: score.nama,
-                        nama: score.nama,
-                        kelas: score.kelas,
-                        skor: score.skor,
-                        status: score.status,
-                        waktu_selesai: score.waktu_selesai,
-                        isLive: score.status === 'SEDANG',
-                    });
-                }
-            });
-        }
+        // Filter and transform students with exam activity
+        const entries: LeaderboardEntry[] = studentsData
+            .filter(student =>
+                student.status_ujian === 'SEDANG' ||
+                student.status_ujian === 'SELESAI' ||
+                student.status_ujian === 'DISKUALIFIKASI'
+            )
+            .map(student => ({
+                id: student.id_siswa,
+                nama: student.nama_lengkap,
+                kelas: student.kelas || '',
+                skor: student.skor_akhir || 0,
+                status: student.status_ujian as 'SELESAI' | 'DISKUALIFIKASI' | 'SEDANG' | 'BELUM',
+                waktu_selesai: undefined,
+                isLive: student.status_ujian === 'SEDANG',
+            }));
 
         // Sort by score descending (racing leaderboard)
         return entries.sort((a, b) => b.skor - a.skor);
-    }, [liveScoreData?.data, usersData?.data]);
+    }, [studentsData]);
 
-    // Stats from liveScore or calculate from users
-    const stats = useMemo(() => {
-        if (liveScoreData?.stats) return liveScoreData.stats;
-        if (!usersData?.data) return undefined;
-        const users = usersData.data;
+    // Stats calculated from Supabase data
+    const stats = useMemo((): LiveScoreStats | undefined => {
+        if (!studentsData || !Array.isArray(studentsData)) return undefined;
+
         return {
-            total: users.length,
-            sedang: users.filter(u => u.status_ujian === 'SEDANG').length,
-            selesai: users.filter(u => u.status_ujian === 'SELESAI').length,
-            diskualifikasi: users.filter(u => u.status_ujian === 'DISKUALIFIKASI').length,
-            belum: users.filter(u => u.status_ujian === 'BELUM').length,
+            total: studentsData.length,
+            sedang: studentsData.filter(u => u.status_ujian === 'SEDANG').length,
+            selesai: studentsData.filter(u => u.status_ujian === 'SELESAI').length,
+            diskualifikasi: studentsData.filter(u => u.status_ujian === 'DISKUALIFIKASI').length,
+            belum: studentsData.filter(u => u.status_ujian === 'BELUM').length,
         };
-    }, [liveScoreData?.stats, usersData?.data]);
+    }, [studentsData]);
 
     useEffect(() => {
         if (!autoScroll || !scrollRef.current) return;

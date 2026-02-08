@@ -35,19 +35,28 @@ export async function loginWithUsername(
     const supabase = getSupabase()
 
     try {
-        // Step 1: Find user profile by username
-        const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('*, schools!inner(*)')
-            .eq('full_name', username) // TODO: Add username column to profiles
+        // Step 1: Find user profile by username using RPC (SECURITY DEFINER bypasses RLS)
+        // Cast to any since RPC function not in generated types yet
+        const { data: profileData, error: profileError } = await (supabase as any)
+            .rpc('lookup_user_for_login', { p_username: username })
             .single()
 
         if (profileError || !profileData) {
+            console.log('Login lookup error:', profileError)
             return { success: false, message: 'Username tidak ditemukan' }
         }
 
-        type ProfileWithSchool = { school_id: string; status_ujian: string | null; waktu_mulai: string | null; id: string; full_name: string; class_group: string | null }
-        const profile = profileData as unknown as ProfileWithSchool
+        // Type the profile data
+        interface LoginProfile {
+            user_id: string
+            school_id: string
+            full_name: string
+            class_group: string | null
+            status_ujian: string | null
+            waktu_mulai: string | null
+            role: string
+        }
+        const profile = profileData as LoginProfile
 
         // Check if exam already completed
         if (profile.status_ujian === 'SELESAI' || profile.status_ujian === 'DISKUALIFIKASI') {
@@ -64,6 +73,7 @@ export async function loginWithUsername(
         })
 
         if (authError) {
+            console.log('Auth error:', authError)
             return { success: false, message: 'Username atau password salah' }
         }
 
@@ -87,7 +97,7 @@ export async function loginWithUsername(
         return {
             success: true,
             data: {
-                id_siswa: profile.id,
+                id_siswa: profile.user_id,
                 username: username,
                 nama_lengkap: profile.full_name,
                 kelas: profile.class_group || '',

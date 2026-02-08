@@ -72,20 +72,20 @@ export default function StudentDetailDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <div className="flex items-start gap-4">
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg flex-shrink-0">
+            <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto p-0 border-none shadow-premium rounded-[2rem]">
+                <DialogHeader className="p-10 pb-0">
+                    <div className="flex items-start gap-5">
+                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white font-bold text-3xl shadow-lg border border-white/20 flex-shrink-0">
                             {user.nama_lengkap.charAt(0)}
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <DialogTitle className="text-2xl">{user.nama_lengkap}</DialogTitle>
-                            <DialogDescription className="flex items-center gap-2 mt-1">
-                                <span>{user.username}</span>
+                        <div className="flex-1 min-w-0 pt-2">
+                            <DialogTitle className="text-3xl font-black tracking-tight text-slate-900">{user.nama_lengkap}</DialogTitle>
+                            <DialogDescription className="flex items-center gap-3 mt-2 text-slate-500 font-medium">
+                                <span className="bg-slate-100 px-2 py-1 rounded text-xs font-mono">@{user.username}</span>
                                 {user.status_login && (
-                                    <span className="flex items-center gap-1 text-emerald-600">
-                                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                                        Online
+                                    <span className="flex items-center gap-1.5 text-emerald-600 text-[10px] font-black uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded border border-emerald-100">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                        Sesi Aktif
                                     </span>
                                 )}
                             </DialogDescription>
@@ -93,7 +93,7 @@ export default function StudentDetailDialog({
                     </div>
                 </DialogHeader>
 
-                <div className="space-y-6 mt-6">
+                <div className="p-10 pt-6 space-y-8">
                     {/* Status Section */}
                     <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
                         <div className="flex items-center justify-between">
@@ -164,12 +164,18 @@ export default function StudentDetailDialog({
                         </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex gap-3 pt-4 border-t border-slate-200">
+                    <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 p-6 bg-slate-50/50 border-t border-slate-100">
+                        <Button
+                            variant="ghost"
+                            className="w-full sm:w-auto text-slate-500 font-semibold"
+                            onClick={() => onOpenChange(false)}
+                        >
+                            Tutup
+                        </Button>
                         {onResetLogin && (
                             <Button
                                 variant="outline"
-                                className="flex-1 border-amber-200 hover:bg-amber-50 text-amber-700 hover:text-amber-800"
+                                className="w-full sm:w-auto border-amber-200 hover:bg-amber-50 text-amber-700 hover:text-amber-800 font-semibold shadow-sm"
                                 onClick={() => {
                                     onResetLogin(user.id_siswa, user.nama_lengkap);
                                     onOpenChange(false);
@@ -179,13 +185,6 @@ export default function StudentDetailDialog({
                                 Reset Login
                             </Button>
                         )}
-                        <Button
-                            variant="default"
-                            className="flex-1 bg-blue-600 hover:bg-blue-700"
-                            onClick={() => onOpenChange(false)}
-                        >
-                            Tutup
-                        </Button>
                     </div>
                 </div>
             </DialogContent>
